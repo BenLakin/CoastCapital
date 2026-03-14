@@ -75,7 +75,6 @@
         "operation": "post",
         "text": "[HomeLab] Daily Infrastructure Report workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -175,7 +174,6 @@
         "operation": "post",
         "text": "={{ $json.report_text }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-recent-summaries"
       },
       "credentials": {

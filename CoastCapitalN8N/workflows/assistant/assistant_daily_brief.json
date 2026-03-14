@@ -75,7 +75,6 @@
         "operation": "post",
         "text": "[Assistant] Daily Morning Brief workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -220,7 +219,6 @@
         "operation": "post",
         "text": "=[Assistant] Good morning!\n\n{{ $json.brief || 'Morning brief generation in progress...' }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-recent-summaries"
       },
       "credentials": {

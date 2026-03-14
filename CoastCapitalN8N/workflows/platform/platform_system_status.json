@@ -179,7 +179,6 @@
         "operation": "post",
         "text": "={{ $json.message }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-current-status"
       },
       "credentials": {

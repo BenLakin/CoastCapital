@@ -54,7 +54,6 @@
         "operation": "post",
         "text": "[Platform] Docker rebuild started",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -286,7 +285,6 @@
         "operation": "post",
         "text": "[Platform] All containers rebuilt successfully",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -310,7 +308,6 @@
         "operation": "post",
         "text": "=[Platform] Docker rebuild partially failed: {{ $json.details }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {

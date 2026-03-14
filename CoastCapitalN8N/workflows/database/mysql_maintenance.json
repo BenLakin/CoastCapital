@@ -94,7 +94,6 @@
         "operation": "post",
         "text": "[Database] Nightly Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -118,7 +117,6 @@
         "operation": "post",
         "text": "[Database] Health Check workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -142,7 +140,6 @@
         "operation": "post",
         "text": "[Database] Weekly Full Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -166,7 +163,6 @@
         "operation": "post",
         "text": "[Database] Manual Maintenance triggered via webhook at {{ $now.toISO() }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -361,7 +357,6 @@
         "operation": "post",
         "text": "=[Database] :mag: Maintenance recommendations found ({{ $json.count }}). Review recommended optimizations in the maintenance dashboard.",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {
@@ -385,7 +380,6 @@
         "operation": "post",
         "text": "=[Database] Nightly maintenance completed successfully. No recommendations.",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -471,7 +465,6 @@
         "operation": "post",
         "text": "=[Database] Health snapshot captured at {{ $now.toISO() }}. See maintenance dashboard for details.",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-recent-summaries"
       },
       "credentials": {
@@ -572,7 +565,6 @@
         "operation": "post",
         "text": "=[Database] Weekly full maintenance and status flush completed at {{ $now.toISO() }}.",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {

@@ -75,7 +75,6 @@
         "operation": "post",
         "text": "=[Sports] Job started: Sports - News Ingest & Summarize ({{ $now.format('yyyy-MM-dd HH:mm') }})",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -221,7 +220,6 @@
         "operation": "post",
         "text": "=[Sports] :white_check_mark: *Sports - News Ingest & Summarize* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",

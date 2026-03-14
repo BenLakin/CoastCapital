@@ -74,7 +74,6 @@
         "operation": "post",
         "text": "=[Assistant] Job started: Followup Check ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -172,7 +171,6 @@
         "operation": "post",
         "text": "={{ $json.message }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {
@@ -209,7 +207,6 @@
         "operation": "post",
         "text": "=[Assistant] :white_check_mark: *Assistant - Followup Check (Unanswered Emails > 3 Days)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",

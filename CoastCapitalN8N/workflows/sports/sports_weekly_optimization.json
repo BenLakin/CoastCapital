@@ -75,7 +75,6 @@
         "operation": "post",
         "text": "=[Sports] Job started: Sports - Weekly Model Optimization ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -158,7 +157,6 @@
         "operation": "post",
         "text": "=[Sports] Weekly Model Optimization Complete\nModels refit: {{ $json.models_refit || 'check dashboard' }}\nBetting plan: {{ $json.betting_plan_summary || 'see /api/weekly-plan' }}\nCV Results: {{ $json.cv_summary || 'check model diagnostics' }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-recent-summaries"
       },
       "credentials": {
@@ -182,7 +180,6 @@
         "operation": "post",
         "text": "=[Sports] :x: *Sports - Weekly Model Optimization* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {
@@ -229,7 +226,6 @@
         "operation": "post",
         "text": "=[Sports] :white_check_mark: *Sports - Weekly Model Optimization* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",

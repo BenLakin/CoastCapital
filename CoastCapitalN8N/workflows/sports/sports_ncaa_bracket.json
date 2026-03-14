@@ -79,7 +79,6 @@
         "operation": "post",
         "text": "=[Sports] Job started: Sports NCAA - Bracket Simulation ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "credentials": {
@@ -202,7 +201,6 @@
         "operation": "post",
         "text": "=[Sports] NCAA Bracket Simulation Updated ({{ $now.format('yyyy-MM-dd') }})\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-recent-summaries"
       },
       "credentials": {
@@ -226,7 +224,6 @@
         "operation": "post",
         "text": "=[Sports] :x: *Sports NCAA - Bracket Simulation* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {

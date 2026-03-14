@@ -185,7 +185,6 @@
       "parameters": {
         "text": "=[Architecture] \ud83c\udfd7\ufe0f Daily audit found *{{ $('Format Findings as Markdown').first().json.count }}* issue(s):\\n\\n{{ $('Format Findings as Markdown').first().json.slack_summary }}\\n\\nMR created for review.",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-action-needed"
       },
       "credentials": {
@@ -212,7 +211,6 @@
         "operation": "post",
         "text": "=[Platform] :white_check_mark: *Platform - Architecture Audit (Daily Code Quality)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
-        "select": "byName",
         "channel": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",
