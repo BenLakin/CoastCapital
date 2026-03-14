@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Betting Recommendations — Coast Capital Sports{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="mb-0"><i class="bi bi-cash-coin me-2"></i>Betting Recommendations</h4>
+        <small class="text-muted">$50 weekly bankroll | Max 50% per game | Quarter-Kelly allocation</small>
+    </div>
+</div>
+
+<!-- Bankroll Summary -->
+<div class="row g-3 mb-4" id="betting-summary">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Bankroll</div>
+            <div class="stat-value text-success" id="bet-bankroll">$50.00</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Total Wagered</div>
+            <div class="stat-value text-warning" id="bet-wagered">—</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Bets Placed</div>
+            <div class="stat-value text-info" id="bet-count">—</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Remaining</div>
+            <div class="stat-value text-secondary" id="bet-remaining">—</div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Recommendations -->
+<div class="section-title"><i class="bi bi-lightning me-1"></i>Live Recommendations</div>
+<div class="row g-3 mb-4" id="live-bets-container">
+    <div class="col-12 spinner-wrapper" id="live-spinner">
+        <div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+</div>
+
+<!-- Full Bet Table -->
+<div class="section-title"><i class="bi bi-table me-1"></i>Detailed Bet Table</div>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-sm table-striped table-hover mb-0" id="bet-table">
+                        <thead>
+                            <tr>
+                                <th>Sport</th>
+                                <th>Target</th>
+                                <th>Pick</th>
+                                <th>Matchup</th>
+                                <th>Date</th>
+                                <th>Moneyline</th>
+                                <th>Model %</th>
+                                <th>Market %</th>
+                                <th>Edge</th>
+                                <th>EV</th>
+                                <th>Wager</th>
+                                <th>Profit</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bet-table-body">
+                            <tr><td colspan="13" class="text-center text-muted">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Weekly Plan -->
+<div class="section-title"><i class="bi bi-calendar-week me-1"></i>Saved Weekly Plan</div>
+<div class="row g-3 mb-4" id="weekly-plan-section">
+    <!-- Populated by JS -->
+</div>
+
+<!-- How It Works -->
+<div class="section-title"><i class="bi bi-info-circle me-1"></i>How It Works</div>
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card p-3">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <h6 class="text-info">1. Model Scoring</h6>
+                    <p class="small text-muted mb-0">Production models score upcoming games across NFL, NCAA MBB, and MLB for home_win, cover_home, and total_over targets.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-info">2. Edge Detection</h6>
+                    <p class="small text-muted mb-0">Model probability is compared against market-implied probability (from moneyline odds). Bets require a minimum 3% edge.</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-info">3. Kelly Allocation</h6>
+                    <p class="small text-muted mb-0">Quarter-Kelly criterion sizes each wager. No single bet exceeds 50% of the bankroll ($25 on a $50 bankroll).</p>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-info">4. Weekly Optimization</h6>
+                    <p class="small text-muted mb-0">The weekly pipeline refits stale models (&gt;14 days), then generates and stores the optimized betting plan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/betting.js"></script>
+{% endblock %}

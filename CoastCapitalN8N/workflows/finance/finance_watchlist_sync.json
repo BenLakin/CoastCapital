@@ -1,0 +1,242 @@
+{
+  "id": "a1b2c3d4-1003-4000-8003-000000000003",
+  "name": "Finance - Watchlist Sync",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    { "id": "1", "name": "finance" },
+    { "id": "2", "name": "daily" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs daily at 5:00 AM ET. Fetches the current watchlist, checks for new tickers, and triggers a backfill for any tickers missing historical data.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Daily 5:00 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "finance-watchlist-sync",
+      "parameters": {
+        "path": "/webhook/finance-watchlist",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [470, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Finance] Job started: Finance - Watchlist Sync ({{ $now.format('yyyy-MM-dd') }})",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-get-watchlist",
+      "name": "GET /n8n/watchlist",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_finance:5000/n8n/watchlist",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-finance-webhook",
+          "name": "Finance Webhook Auth"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "node-check-http-error",
+      "name": "Check HTTP Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [910, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-slack-error",
+      "name": "Slack - Watchlist Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1130, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-action-needed",
+        "text": "=[Finance] :warning: Watchlist sync failed: {{ $json.error || 'Unknown error' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-call-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1350, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"workflow_name\": \"Finance - Watchlist Sync\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"finance\" }",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "node-check-new",
+      "name": "Has New Tickers?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1130, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-new",
+              "leftValue": "={{ $json.needs_backfill?.length || 0 }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-backfill",
+      "name": "POST /n8n/backfill",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1350, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/backfill",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "tickers", "value": "={{ $json.needs_backfill }}" }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-finance-webhook",
+          "name": "Finance Webhook Auth"
+        }
+      }
+    },
+    {
+      "id": "node-no-action",
+      "name": "No New Tickers",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1350, 600],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Daily 5:00 AM ET": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Job Started": {
+      "main": [[{ "node": "GET /n8n/watchlist", "type": "main", "index": 0 }]]
+    },
+    "GET /n8n/watchlist": {
+      "main": [
+        [{ "node": "Check HTTP Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check HTTP Error": {
+      "main": [
+        [{ "node": "Slack - Watchlist Error", "type": "main", "index": 0 }],
+        [{ "node": "Has New Tickers?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Slack - Watchlist Error": {
+      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+    },
+    "Has New Tickers?": {
+      "main": [
+        [{ "node": "POST /n8n/backfill", "type": "main", "index": 0 }],
+        [{ "node": "No New Tickers", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}

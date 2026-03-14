@@ -1,0 +1,47 @@
+# Environment files (secrets)
+.env
+.env.prod
+.env.dev
+.env.local
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Logs
+logs/
+*.log
+
+# Docker volumes (local data)
+mysql_data/
+n8n_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Model caches
+models_cache/
+model_artifacts/
+
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage

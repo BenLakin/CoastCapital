@@ -1,0 +1,190 @@
+/* ============================================================
+   Coast Capital Sports — Dashboard Styles
+   Inherits design tokens from /static/brand/css/brand.css
+   ============================================================ */
+
+:root {
+    /* Sports-specific aliases mapping to brand tokens */
+    --cc-blue:    var(--cc-brand-secondary, #0077b6);
+    --cc-teal:    var(--cc-brand-primary, #00b4d8);
+    --cc-green:   var(--cc-green, #22c55e);
+    --cc-orange:  var(--cc-orange, #f97316);
+    --cc-red:     var(--cc-red, #ef4444);
+    --cc-surface: var(--cc-bg-surface, #1a1d21);
+    --cc-card:    var(--cc-bg-card, #0f1929);
+}
+
+body {
+    background-color: var(--cc-bg-base, var(--cc-surface));
+    font-family: var(--cc-font-sans, 'Inter', system-ui, -apple-system, sans-serif);
+}
+
+/* --- Cards ----------------------------------------------------------- */
+.card {
+    background-color: var(--cc-card);
+    border: 1px solid rgba(255,255,255,.08);
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.35);
+}
+.card-header {
+    background-color: rgba(255,255,255,.04);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+/* --- Section headers ------------------------------------------------- */
+.section-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--cc-teal);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+/* --- Stat badges ----------------------------------------------------- */
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+.stat-label {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: rgba(255,255,255,.55);
+}
+
+/* --- Focus team cards ------------------------------------------------ */
+.team-card .team-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+.team-card .score-row {
+    font-size: .92rem;
+}
+.team-card .score-row .winner {
+    color: var(--cc-green);
+    font-weight: 600;
+}
+.team-card .score-row .loser {
+    color: rgba(255,255,255,.45);
+}
+
+/* --- News cards ------------------------------------------------------ */
+.news-card .headline {
+    font-weight: 600;
+    font-size: .95rem;
+}
+.news-card .summary {
+    font-size: .85rem;
+    color: rgba(255,255,255,.7);
+}
+.news-card .meta {
+    font-size: .75rem;
+    color: rgba(255,255,255,.4);
+}
+.news-card .badge-focus {
+    font-size: .7rem;
+}
+
+/* --- Bet cards ------------------------------------------------------- */
+.bet-card {
+    border-left: 3px solid var(--cc-green);
+}
+.bet-card .card-header {
+    padding: .5rem .75rem;
+}
+.bet-card .card-body {
+    padding: .75rem;
+}
+.bet-card hr {
+    opacity: .15;
+}
+
+/* --- Confusion matrix ------------------------------------------------ */
+.cm-cell {
+    width: 120px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+    border-radius: .375rem;
+}
+.cm-cell small {
+    font-size: .65rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.cm-tp { background-color: rgba(25,135,84,.35); color: #75b798; }
+.cm-tn { background-color: rgba(25,135,84,.2);  color: #75b798; }
+.cm-fp { background-color: rgba(220,53,69,.25);  color: #ea868f; }
+.cm-fn { background-color: rgba(220,53,69,.15);  color: #ea868f; }
+
+/* --- Recommendation banner ------------------------------------------- */
+.recommendation-banner {
+    border-left: 4px solid var(--cc-teal);
+    background-color: rgba(13,202,240,.08);
+    padding: 1rem 1.25rem;
+    border-radius: .375rem;
+}
+.recommendation-banner.promote {
+    border-left-color: var(--cc-green);
+    background-color: rgba(25,135,84,.08);
+}
+.recommendation-banner.keep {
+    border-left-color: var(--cc-orange);
+    background-color: rgba(253,126,20,.08);
+}
+
+/* --- Chart containers ------------------------------------------------ */
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-height: 400px;
+}
+
+/* --- Loading spinner ------------------------------------------------- */
+.spinner-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+/* --- Table tweaks ----------------------------------------------------- */
+.table-sm th { font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+.table-sm td { font-size: .88rem; }
+
+/* --- Nav dropdown ---------------------------------------------------- */
+.navbar .dropdown-menu-dark {
+    background-color: var(--cc-card);
+    border: 1px solid rgba(255,255,255,.1);
+}
+.navbar .dropdown-item {
+    padding: .5rem 1rem;
+    font-size: .9rem;
+}
+.navbar .dropdown-item:hover,
+.navbar .dropdown-item:focus {
+    background-color: rgba(255,255,255,.08);
+}
+.navbar .dropdown-item.active {
+    background-color: rgba(0,180,216,.15);
+    color: var(--cc-teal);
+}
+.navbar .dropdown-divider {
+    border-color: rgba(255,255,255,.1);
+}
+
+/* --- Active nav ------------------------------------------------------ */
+.nav-link.active {
+    color: var(--cc-teal) !important;
+    border-bottom: 2px solid var(--cc-teal);
+}

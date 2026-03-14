@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "coastcapital-dispatcher": {
+      "command": "python3",
+      "args": ["CoastCapitalPlatform/mcp_server.py"],
+      "env": {
+        "OLLAMA_BASE_URL": "http://localhost:11434",
+        "OLLAMA_MODEL": "llama3.1:8b"
+      }
+    }
+  }
+}

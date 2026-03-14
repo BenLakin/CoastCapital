@@ -1,0 +1,200 @@
+{
+  "id": "a1b2c3d4-4003-4000-800a-000000000010",
+  "name": "Sports - Daily Pipeline (Ingest + Score + Bet)",
+  "active": true,
+  "versionId": "1",
+  "meta": { "instanceId": "coastcapital-n8n" },
+  "tags": [
+    { "id": "7", "name": "sports" },
+    { "id": "4", "name": "daily" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs daily at 6:00 AM ET. Ingests latest game data for all active sports, scores production models, and generates betting recommendations. Covers MLB (Apr-Oct), NCAA MBB (Nov-Apr), and NFL (Sep-Feb).",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Daily 6:00 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 6 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "sports-daily-pipeline-webhook",
+      "parameters": {
+        "path": "/webhook/sports-daily",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [470, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Sports] Job started: Sports - Daily Pipeline ({{ $now.format('yyyy-MM-dd') }})",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-daily-pipeline",
+      "name": "POST /daily-pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-sports:5000/daily-pipeline",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"sports\": [\"nfl\", \"ncaa_mbb\", \"mlb\"], \"date\": \"{{ $now.format('yyyy-MM-dd') }}\", \"bankroll\": 50, \"max_pct\": 0.5}",
+        "options": { "timeout": 300000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+      }
+    },
+    {
+      "id": "node-check-result",
+      "name": "Pipeline Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [910, 200],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-ok",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "error",
+              "operator": { "type": "string", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-build-summary",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1130, 100],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg",
+              "name": "message",
+              "value": "=[Sports] Daily Pipeline Complete\nDate: {{ $now.format('yyyy-MM-dd') }}\nSports processed: {{ $json.sports_processed || 'all' }}\nGames ingested: {{ $json.games_ingested || 'N/A' }}\nPredictions generated: {{ $json.predictions_count || 'N/A' }}\nBetting recommendations: {{ $json.betting_recs || 'N/A' }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-slack-success",
+      "name": "Slack - Daily Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1350, 100],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-recent-summaries",
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-slack-error",
+      "name": "Slack - Pipeline Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1130, 350],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-action-needed",
+        "text": "=[Sports] :warning: Daily pipeline failed for {{ $now.format('yyyy-MM-dd') }}: {{ $json.error || $json.message || 'Unknown error' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1350, 350],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"Sports - Daily Pipeline (Ingest + Score + Bet)\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"sports\"}",
+        "options": { "timeout": 10000 }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 6:00 AM ET": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Job Started": {
+      "main": [[{ "node": "POST /daily-pipeline", "type": "main", "index": 0 }]]
+    },
+    "POST /daily-pipeline": {
+      "main": [[{ "node": "Pipeline Success?", "type": "main", "index": 0 }]]
+    },
+    "Pipeline Success?": {
+      "main": [
+        [{ "node": "Build Summary", "type": "main", "index": 0 }],
+        [{ "node": "Slack - Pipeline Failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Summary": {
+      "main": [[{ "node": "Slack - Daily Summary", "type": "main", "index": 0 }]]
+    },
+    "Slack - Pipeline Failed": {
+      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+    }
+  }
+}

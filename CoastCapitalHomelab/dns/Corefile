@@ -1,0 +1,27 @@
+.:53 {
+    # Auto-reload config and hosts file every 15s
+    reload 15s
+
+    # Health endpoint — reachable by homelab app at http://homelab-dns:8080/health
+    health :8080
+
+    # Custom local A records managed by HomeLabAgent / dashboard
+    hosts /etc/coredns/custom.hosts {
+        ttl 300
+        reload 15s
+        fallthrough
+    }
+
+    # Forward all other queries upstream
+    forward . 1.1.1.1 8.8.8.8 {
+        prefer_udp
+        health_check 10s
+    }
+
+    # DNS response cache — 300s TTL
+    cache 300
+
+    # Log errors and queries
+    errors
+    log
+}

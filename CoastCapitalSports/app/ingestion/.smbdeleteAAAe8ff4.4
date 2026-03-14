@@ -1,0 +1,88 @@
+import requests
+from database import get_connection
+
+ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
+
+def fetch_nfl_data(date_str=None):
+    params = {}
+    if date_str:
+        params["dates"] = date_str.replace("-", "")
+    response = requests.get(ESPN_URL, params=params, timeout=30)
+    response.raise_for_status()
+    return response.json().get("events", [])
+
+def _extract_round_name(event, comp):
+    candidates = [
+        comp.get("status", {}).get("type", {}).get("name"),
+        comp.get("status", {}).get("type", {}).get("shortName"),
+        event.get("week", {}).get("text"),
+        event.get("seasonType", {}).get("name"),
+        event.get("name"),
+        event.get("shortName"),
+    ]
+    for c in candidates:
+        if c:
+            return str(c)
+    return ""
+
+def _is_postseason(round_name):
+    text = str(round_name).lower()
+    return int(any(x in text for x in ["wild card", "divisional", "conference championship", "afc championship", "nfc championship", "super bowl", "playoff"]))
+
+def insert_nfl_data(date_str=None):
+    conn = get_connection("nfl_silver")
+    cursor = conn.cursor()
+
+    for event in fetch_nfl_data(date_str):
+        comp = event["competitions"][0]
+        home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
+        away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
+
+        home_score = int(home.get("score", 0))
+        away_score = int(away.get("score", 0))
+        margin = home_score - away_score
+        round_name = _extract_round_name(event, comp)
+        is_postseason_game = _is_postseason(round_name)
+
+        cursor.execute(
+            """
+            INSERT INTO fact_game_results (
+                game_id, game_date, home_team, away_team, home_score, away_score, margin,
+                is_postseason_game, round_name, playoff_experience_home, playoff_experience_away
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+              game_date = VALUES(game_date),
+              home_team = VALUES(home_team),
+              away_team = VALUES(away_team),
+              home_score = VALUES(home_score),
+              away_score = VALUES(away_score),
+              margin = VALUES(margin),
+              is_postseason_game = VALUES(is_postseason_game),
+              round_name = VALUES(round_name)
+            """,
+            (
+                event["id"], comp.get("date"), home["team"]["displayName"], away["team"]["displayName"],
+                home_score, away_score, margin, is_postseason_game, round_name, 0.0, 0.0
+            )
+        )
+
+        for odds in comp.get("odds", []):
+            provider = (odds.get("provider") or {}).get("name", "Unknown")
+            spread = odds.get("spread")
+            ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
+            ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
+            total_line = odds.get("overUnder")
+
+            cursor.execute(
+                """
+                INSERT INTO fact_market_odds
+                (game_id, sportsbook, spread, moneyline_home, moneyline_away, total_line, market_timestamp)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                """,
+                (event["id"], provider, spread, ml_home, ml_away, total_line)
+            )
+
+    conn.commit()
+    cursor.close()
+    conn.close()

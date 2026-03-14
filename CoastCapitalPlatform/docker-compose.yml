@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  platform:
+    build: .
+    container_name: coastcapital-platform
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      PLATFORM_API_KEY: ${PLATFORM_API_KEY}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      GIT_USER_NAME: ${GIT_USER_NAME:-CoastCapital Bot}
+      GIT_USER_EMAIL: ${GIT_USER_EMAIL:-bot@coastcapital.local}
+      WORKSPACE_ROOT: /workspace
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # MySQL (prediction logging + feedback)
+      MYSQL_HOST: coastcapital-mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-dbadmin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      PLATFORM_MYSQL_DATABASE: ${PLATFORM_MYSQL_DATABASE:-maintenance_db}
+    ports:
+      - "5400:5400"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./app:/app/app
+      - ../:/workspace:ro
+      - ../CoastCapitalBrand:/app/app/static/brand:ro
+    networks:
+      - db-external
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5400/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  db-external:
+    external: true
+    name: coastcapitaldatabase_db-network

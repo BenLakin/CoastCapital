@@ -1,0 +1,181 @@
+{
+  "id": "a1b2c3d4-4006-4000-800d-000000000013",
+  "name": "Sports - News Ingest & Summarize",
+  "active": true,
+  "versionId": "1",
+  "meta": { "instanceId": "coastcapital-n8n" },
+  "tags": [
+    { "id": "7", "name": "sports" },
+    { "id": "11", "name": "news" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs every 6 hours (6 AM, 12 PM, 6 PM, 12 AM ET). Fetches ESPN news for all sports and generates LLM summaries. Focus teams: Colts, Cubs, Iowa Hawkeyes.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 0,6,12,18 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "sports-news-ingest-webhook",
+      "parameters": {
+        "path": "/webhook/sports-news-ingest",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [470, 100],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Sports] Job started: Sports - News Ingest & Summarize ({{ $now.format('yyyy-MM-dd HH:mm') }})",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-ingest-nfl",
+      "name": "POST /ingest-news (NFL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-sports:5000/ingest-news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"sport\": \"nfl\", \"summarize\": true}",
+        "options": { "timeout": 120000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+      }
+    },
+    {
+      "id": "node-ingest-ncaa",
+      "name": "POST /ingest-news (NCAA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 350],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-sports:5000/ingest-news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"sport\": \"ncaa_mbb\", \"summarize\": true}",
+        "options": { "timeout": 120000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+      }
+    },
+    {
+      "id": "node-ingest-mlb",
+      "name": "POST /ingest-news (MLB)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 500],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-sports:5000/ingest-news",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"sport\": \"mlb\", \"summarize\": true}",
+        "options": { "timeout": 120000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+      }
+    },
+    {
+      "id": "node-aggregate",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [910, 350],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg",
+              "name": "summary",
+              "value": "[Sports] News ingest complete",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-noop",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1130, 350],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every 6 Hours": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Job Started": {
+      "main": [
+        [
+          { "node": "POST /ingest-news (NFL)", "type": "main", "index": 0 },
+          { "node": "POST /ingest-news (NCAA)", "type": "main", "index": 0 },
+          { "node": "POST /ingest-news (MLB)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "POST /ingest-news (NFL)": {
+      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+    },
+    "POST /ingest-news (NCAA)": {
+      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+    },
+    "POST /ingest-news (MLB)": {
+      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Results": {
+      "main": [[{ "node": "Done", "type": "main", "index": 0 }]]
+    }
+  }
+}

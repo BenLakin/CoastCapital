@@ -1,0 +1,225 @@
+/* ============================================================
+   CoastCapital Platform Navigation
+   Shared cross-module nav bar — uses brand.css tokens
+   ============================================================ */
+
+/* ── Nav bar container ─────────────────────────────────────── */
+#cc-platform-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  height: 48px;
+  background: var(--cc-bg-surface, #111827);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--cc-font-sans, 'Inter', system-ui, sans-serif);
+  font-size: 0.85rem;
+}
+
+/* Push page content below fixed nav */
+body.ccn-has-nav {
+  padding-top: 48px;
+}
+
+/* ── Inner layout ──────────────────────────────────────────── */
+.ccn-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 20px;
+  gap: 8px;
+}
+
+/* ── Logo ──────────────────────────────────────────────────── */
+.ccn-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #fff;
+  margin-right: 24px;
+  flex-shrink: 0;
+}
+.ccn-logo img {
+  width: 22px;
+  height: 22px;
+}
+.ccn-logo-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Module navigation ─────────────────────────────────────── */
+.ccn-modules {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.ccn-module {
+  position: relative;
+}
+
+.ccn-module-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ccn-module-link:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Active module */
+.ccn-module.ccn-active > .ccn-module-link {
+  color: var(--cc-brand-primary, #00b4d8);
+  background: rgba(0, 180, 216, 0.1);
+}
+
+/* Caret */
+.ccn-caret {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  margin-left: 2px;
+  transition: transform 0.15s;
+}
+
+/* ── Dropdown ──────────────────────────────────────────────── */
+.ccn-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  min-width: 200px;
+  background: var(--cc-bg-card, #1a1d21);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Show on hover (desktop) */
+@media (min-width: 769px) {
+  .ccn-module:hover > .ccn-dropdown {
+    display: block;
+  }
+  .ccn-module:hover .ccn-caret {
+    transform: rotate(180deg);
+  }
+}
+
+.ccn-dropdown-item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 400;
+  transition: color 0.12s, background 0.12s;
+}
+.ccn-dropdown-item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.ccn-dropdown-item.ccn-page-active {
+  color: var(--cc-brand-primary, #00b4d8);
+  background: rgba(0, 180, 216, 0.08);
+  font-weight: 500;
+}
+
+/* ── Hamburger (mobile) ────────────────────────────────────── */
+.ccn-burger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  margin-left: auto;
+}
+.ccn-burger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 1px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+/* ── Mobile responsive ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  #cc-platform-nav {
+    height: auto;
+    min-height: 48px;
+  }
+
+  body.ccn-has-nav {
+    padding-top: 48px;
+  }
+
+  .ccn-inner {
+    flex-wrap: wrap;
+  }
+
+  .ccn-burger {
+    display: flex;
+  }
+
+  .ccn-modules {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    padding: 8px 0 12px;
+    gap: 0;
+  }
+
+  .ccn-mobile-open .ccn-modules {
+    display: flex;
+  }
+
+  .ccn-mobile-open .ccn-burger span:nth-child(1) {
+    transform: rotate(45deg) translate(4px, 4px);
+  }
+  .ccn-mobile-open .ccn-burger span:nth-child(2) {
+    opacity: 0;
+  }
+  .ccn-mobile-open .ccn-burger span:nth-child(3) {
+    transform: rotate(-45deg) translate(4px, -4px);
+  }
+
+  .ccn-module {
+    width: 100%;
+  }
+  .ccn-module-link {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 4px;
+  }
+
+  .ccn-module.ccn-open > .ccn-dropdown {
+    display: block;
+    position: static;
+    margin-top: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding-left: 16px;
+  }
+}

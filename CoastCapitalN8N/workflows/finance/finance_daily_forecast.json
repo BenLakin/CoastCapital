@@ -1,0 +1,247 @@
+{
+  "id": "a1b2c3d4-1001-4000-8001-000000000001",
+  "name": "Finance - Daily Forecast",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    { "id": "1", "name": "finance" },
+    { "id": "2", "name": "daily" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs weekdays at 6:30 AM ET. Calls the CoastFinance Flask API to generate daily forecasts for all watchlist tickers, then sends results to Slack and email.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Weekday 6:30 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "finance-daily-forecast",
+      "parameters": {
+        "path": "/webhook/finance-forecast",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [470, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Finance] Job started: Finance - Daily Forecast ({{ $now.format('yyyy-MM-dd') }})",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-set-params",
+      "name": "Set Request Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [690, 300],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "use_llm", "name": "use_llm", "value": true, "type": "boolean" },
+            { "id": "top_n", "name": "top_n", "value": 10, "type": "number" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-http-forecast",
+      "name": "POST /n8n/daily-forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [910, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/daily-forecast",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "use_llm", "value": "={{ $json.use_llm }}" },
+            { "name": "top_n", "value": "={{ $json.top_n }}" }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-finance-webhook",
+          "name": "Finance Webhook Auth"
+        }
+      }
+    },
+    {
+      "id": "node-check-success",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1130, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-status",
+              "leftValue": "={{ $json.body.status }}",
+              "rightValue": "success",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-slack-success",
+      "name": "Slack - Morning Brief",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1350, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-recent-summaries",
+        "text": "=[Finance] Daily Forecast Complete\n\nTop Opportunities:\n{{ $json.body.summary || 'See dashboard for details' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1350, 400],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            { "id": "error_msg", "name": "error_message", "value": "=Daily forecast failed: {{ $json.body.error || $json.statusCode }}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-slack-error",
+      "name": "Slack - Error Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1570, 400],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-action-needed",
+        "text": "=[Finance] :warning: {{ $json.error_message }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-call-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1790, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"workflow_name\": \"Finance - Daily Forecast\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"finance\" }",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Weekday 6:30 AM ET": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Job Started": {
+      "main": [[{ "node": "Set Request Parameters", "type": "main", "index": 0 }]]
+    },
+    "Set Request Parameters": {
+      "main": [[{ "node": "POST /n8n/daily-forecast", "type": "main", "index": 0 }]]
+    },
+    "POST /n8n/daily-forecast": {
+      "main": [[{ "node": "Check Success", "type": "main", "index": 0 }]]
+    },
+    "Check Success": {
+      "main": [
+        [{ "node": "Slack - Morning Brief", "type": "main", "index": 0 }],
+        [{ "node": "Log Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Error": {
+      "main": [[{ "node": "Slack - Error Alert", "type": "main", "index": 0 }]]
+    },
+    "Slack - Error Alert": {
+      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+    }
+  }
+}

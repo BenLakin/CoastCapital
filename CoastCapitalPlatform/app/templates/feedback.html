@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Dispatcher Feedback — CoastCapital Platform{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="mb-0"><i class="bi bi-bullseye me-2"></i>Intent Dispatcher — Feedback Dashboard</h4>
+        <small class="text-muted">Review Ollama intent predictions and vote on accuracy to improve future classifications</small>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4" id="stats-row">
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label">Total</div>
+            <div class="stat-value text-info" id="stat-total">—</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value text-success" id="stat-accuracy">—</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label"><i class="bi bi-hand-thumbs-up"></i> Upvotes</div>
+            <div class="stat-value text-success" id="stat-upvotes">—</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label"><i class="bi bi-hand-thumbs-down"></i> Downvotes</div>
+            <div class="stat-value text-danger" id="stat-downvotes">—</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value text-warning" id="stat-pending">—</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card text-center p-3">
+            <div class="stat-label">Avg Response</div>
+            <div class="stat-value text-info" id="stat-response">—</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="row mb-3">
+    <div class="col">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-info btn-sm active" data-filter="all">All</button>
+            <button type="button" class="btn btn-outline-warning btn-sm" data-filter="pending">Pending Review</button>
+            <button type="button" class="btn btn-outline-success btn-sm" data-filter="up">Upvoted</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-filter="down">Downvoted</button>
+        </div>
+        <span class="ms-3 text-muted small" id="model-badge">
+            <i class="bi bi-robot me-1"></i>Model: <span id="current-model">{{ ollama_model }}</span>
+        </span>
+    </div>
+</div>
+
+<!-- Predictions Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-dark table-sm table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Source</th>
+                                <th>User Input</th>
+                                <th>Predicted Intent</th>
+                                <th>Confidence</th>
+                                <th>Model</th>
+                                <th>Speed</th>
+                                <th>Vote</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictions-table">
+                            <tr><td colspan="9" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+                                Loading predictions…
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load More -->
+<div class="text-center mb-4">
+    <button class="btn btn-outline-secondary btn-sm" id="load-more" style="display:none;">
+        <i class="bi bi-arrow-down-circle me-1"></i>Load More
+    </button>
+</div>
+
+<!-- Vote Modal -->
+<div class="modal fade" id="voteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Submit Feedback</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted small">User Input</label>
+                    <div id="modal-user-text" class="text-info"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Predicted Intent</label>
+                    <div id="modal-predicted" class="fw-bold"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Was this prediction correct?</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="vote" id="vote-up" value="up">
+                        <label class="btn btn-outline-success" for="vote-up">
+                            <i class="bi bi-hand-thumbs-up me-1"></i>Correct
+                        </label>
+                        <input type="radio" class="btn-check" name="vote" id="vote-down" value="down">
+                        <label class="btn btn-outline-danger" for="vote-down">
+                            <i class="bi bi-hand-thumbs-down me-1"></i>Incorrect
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-3" id="correct-intent-group" style="display:none;">
+                    <label class="form-label" for="correct-intent">What should the intent have been?</label>
+                    <select class="form-select bg-dark text-light border-secondary" id="correct-intent">
+                        <option value="">— Select correct intent —</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="feedback-note">Notes (optional)</label>
+                    <textarea class="form-control bg-dark text-light border-secondary" id="feedback-note" rows="2"
+                              placeholder="Any additional context…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info btn-sm" id="submit-vote">
+                    <i class="bi bi-check2 me-1"></i>Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pass intents from server
+    const INTENTS = {{ intents_json | safe }};
+</script>
+<script src="/static/js/feedback.js"></script>
+{% endblock %}

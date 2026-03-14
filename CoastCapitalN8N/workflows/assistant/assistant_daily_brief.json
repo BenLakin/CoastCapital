@@ -1,0 +1,265 @@
+{
+  "id": "a1b2c3d4-3001-4000-8006-000000000006",
+  "name": "Assistant - Daily Morning Brief",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    { "id": "6", "name": "assistant" },
+    { "id": "2", "name": "daily" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs daily at 7:00 AM ET. Pulls today's calendar events, pending tasks, and news highlights, then uses the Assistant API to generate an AI-powered morning brief. Delivers via Slack and email.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Daily 7:00 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 600],
+      "webhookId": "assistant-brief-webhook",
+      "parameters": {
+        "path": "/webhook/assistant-brief",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [420, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "[Assistant] Daily Morning Brief workflow started at {{ $now.toISO() }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-get-calendar",
+      "name": "GET /api/calendar/today",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [620, 150],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_assistant:5002/api/calendar/today",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 15000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-assistant-webhook",
+          "name": "Assistant Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-get-tasks",
+      "name": "GET /api/tasks/pending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [620, 350],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_assistant:5002/api/tasks/pending",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 15000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-assistant-webhook",
+          "name": "Assistant Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-get-news",
+      "name": "GET /api/news/highlights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [620, 550],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_assistant:5002/api/news/highlights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 15000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-assistant-webhook",
+          "name": "Assistant Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-generate-brief",
+      "name": "POST /api/morning-brief",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [840, 350],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_assistant:5002/api/morning-brief",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "include_calendar", "value": true },
+            { "name": "include_tasks", "value": true },
+            { "name": "include_news", "value": true }
+          ]
+        },
+        "options": { "timeout": 60000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-assistant-webhook",
+          "name": "Assistant Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-slack-brief",
+      "name": "Slack - Morning Brief",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1060, 250],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-recent-summaries",
+        "text": "=[Assistant] Good morning!\n\n{{ $json.brief || 'Morning brief generation in progress...' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
+      }
+    },
+    {
+      "id": "node-email-brief",
+      "name": "Email - Morning Brief",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1060, 450],
+      "parameters": {
+        "fromEmail": "assistant@coastcapital.local",
+        "toEmail": "admin@coastcapital.local",
+        "subject": "=[Assistant] Morning Brief - {{ $now.format('EEEE, MMMM d') }}",
+        "text": "=[Assistant] {{ $json.brief || 'See Slack for details' }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp",
+          "name": "CoastCapital SMTP"
+        }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1060, 600],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"assistant_daily_brief\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"assistant\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Daily 7:00 AM ET": {
+      "main": [
+        [
+          { "node": "Job Started", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Job Started", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Job Started": {
+      "main": [
+        [
+          { "node": "GET /api/calendar/today", "type": "main", "index": 0 },
+          { "node": "GET /api/tasks/pending", "type": "main", "index": 0 },
+          { "node": "GET /api/news/highlights", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "GET /api/calendar/today": {
+      "main": [[{ "node": "POST /api/morning-brief", "type": "main", "index": 0 }]]
+    },
+    "GET /api/tasks/pending": {
+      "main": [[{ "node": "POST /api/morning-brief", "type": "main", "index": 0 }]]
+    },
+    "GET /api/news/highlights": {
+      "main": [[{ "node": "POST /api/morning-brief", "type": "main", "index": 0 }]]
+    },
+    "POST /api/morning-brief": {
+      "main": [
+        [
+          { "node": "Slack - Morning Brief", "type": "main", "index": 0 },
+          { "node": "Email - Morning Brief", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}

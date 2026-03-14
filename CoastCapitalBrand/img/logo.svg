@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 48" fill="none">
+  <!-- Icon: stylized diamond/wave mark -->
+  <path d="M24 4L4 24l20 20 20-20L24 4z" fill="#00b4d8" opacity="0.9"/>
+  <path d="M24 10l-14 14 14 14 14-14L24 10z" fill="#0b1120"/>
+  <path d="M24 16l-8 8 8 8 8-8-8-8z" fill="#00b4d8"/>
+  <!-- Wordmark -->
+  <text x="54" y="32" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="22" fill="#e2e8f0" letter-spacing="-0.5">Coast</text>
+  <text x="120" y="32" font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="22" fill="#00b4d8" letter-spacing="-0.5">Capital</text>
+</svg>

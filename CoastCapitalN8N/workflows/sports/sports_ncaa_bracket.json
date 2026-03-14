@@ -1,0 +1,218 @@
+{
+  "id": "a1b2c3d4-4005-4000-800c-000000000012",
+  "name": "Sports NCAA - Bracket Simulation",
+  "active": true,
+  "versionId": "1",
+  "meta": { "instanceId": "coastcapital-n8n" },
+  "tags": [
+    { "id": "7", "name": "sports" },
+    { "id": "9", "name": "ncaa" },
+    { "id": "10", "name": "bracket" }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs daily at 5:00 AM ET during March Madness (March 1 - April 10). Fetches the 68-team field, builds team profiles, runs 10,000 Monte Carlo simulations, and optimizes bracket picks for pool-winning leverage. Generates an HTML bracket visualization.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Daily 5:00 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 5 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "sports-ncaa-bracket-webhook",
+      "parameters": {
+        "path": "/webhook/sports-ncaa-bracket",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [470, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Sports] Job started: Sports NCAA - Bracket Simulation ({{ $now.format('yyyy-MM-dd') }})",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-check-march",
+      "name": "Is March Madness Window?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 200],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-month-start",
+              "leftValue": "={{ $now.month }}",
+              "rightValue": 3,
+              "operator": { "type": "number", "operation": "gte" }
+            },
+            {
+              "id": "cond-month-end",
+              "leftValue": "={{ $now.month }}",
+              "rightValue": 4,
+              "operator": { "type": "number", "operation": "lte" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-simulate",
+      "name": "POST /simulate-bracket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [910, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-sports:5000/simulate-bracket",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"season\": {{ $now.year }}, \"n_simulations\": 10000, \"pool_size\": 100, \"risk_tolerance\": 0.5, \"output_html\": true, \"refresh_field\": true}",
+        "options": { "timeout": 600000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+      }
+    },
+    {
+      "id": "node-check-result",
+      "name": "Simulation Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1130, 100],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-ok",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ok",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-slack-bracket",
+      "name": "Slack - Bracket Update",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1350, 0],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-recent-summaries",
+        "text": "=[Sports] NCAA Bracket Simulation Updated ({{ $now.format('yyyy-MM-dd') }})\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-slack-error",
+      "name": "Slack - Simulation Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1350, 200],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-action-needed",
+        "text": "=[Sports] :warning: NCAA bracket simulation failed: {{ $json.error || 'Unknown error' }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1570, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"Sports NCAA - Bracket Simulation\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"sports\"}",
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "node-off-season",
+      "name": "Not March Madness - Skip",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [910, 300],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Daily 5:00 AM ET": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+    },
+    "Job Started": {
+      "main": [[{ "node": "Is March Madness Window?", "type": "main", "index": 0 }]]
+    },
+    "Is March Madness Window?": {
+      "main": [
+        [{ "node": "POST /simulate-bracket", "type": "main", "index": 0 }],
+        [{ "node": "Not March Madness - Skip", "type": "main", "index": 0 }]
+      ]
+    },
+    "POST /simulate-bracket": {
+      "main": [[{ "node": "Simulation Success?", "type": "main", "index": 0 }]]
+    },
+    "Simulation Success?": {
+      "main": [
+        [{ "node": "Slack - Bracket Update", "type": "main", "index": 0 }],
+        [{ "node": "Slack - Simulation Failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Slack - Simulation Failed": {
+      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+    }
+  }
+}

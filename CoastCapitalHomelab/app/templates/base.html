@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HomeLab{% endblock %} — CoastCapital</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand/img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='brand/css/brand.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='brand/css/nav.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body data-cc-module="homelab" data-cc-page="dashboard">
+
+  <!-- Ambient background blobs -->
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+  </div>
+
+  <!-- HomeLab status toolbar (below platform nav) -->
+  <div class="hp-toolbar" style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div class="hp-clock-wrap" style="display:flex;align-items:center;gap:8px;">
+      <div class="hp-time" id="hp-time" style="font-size:1rem;font-weight:600;color:rgba(255,255,255,0.9);">--:--</div>
+      <div class="hp-date" id="hp-date" style="font-size:0.8rem;color:rgba(255,255,255,0.5);">---</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="hp-overall-status" id="hp-overall-status" style="display:flex;align-items:center;gap:6px;">
+        <span class="hp-status-dot" id="hp-status-dot"></span>
+        <span class="hp-status-label" id="hp-status-label" style="font-size:0.8rem;color:rgba(255,255,255,0.7);">Connecting</span>
+      </div>
+      <button class="hp-refresh-btn" id="btn-refresh-all" title="Refresh all services" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;display:flex;align-items:center;gap:4px;font-size:0.8rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Refresh
+      </button>
+      <span class="hp-last-updated" id="last-updated" style="font-size:0.75rem;color:rgba(255,255,255,0.4);"></span>
+    </div>
+  </div>
+
+  <main class="hp-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='brand/js/nav.js') }}"></script>
+  {% block scripts %}{% endblock %}
+
+  <script>
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const timeEl = document.getElementById('hp-time');
+      const dateEl = document.getElementById('hp-date');
+      if (timeEl) timeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

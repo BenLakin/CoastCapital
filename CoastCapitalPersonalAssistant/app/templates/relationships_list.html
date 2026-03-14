@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Relationships · CoastCapital Assistant{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex items-center justify-between flex-wrap gap-4">
+  <div>
+    <h2 class="text-2xl font-bold text-gray-900">Relationships</h2>
+    <p class="text-gray-500 mt-1 text-sm">Family contacts, birthdays, and gift planning.</p>
+  </div>
+  <button onclick="document.getElementById('addPersonModal').classList.remove('hidden')"
+    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+    + Add Person
+  </button>
+</div>
+
+{% if people %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for p in people %}
+  <a href="/relationship/{{ p.id }}"
+     class="card hover:shadow-md transition-shadow cursor-pointer block group">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-400 to-pink-600
+                  flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+        {{ p.name[0] | upper }}
+      </div>
+      <div>
+        <p class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{{ p.name }}</p>
+        {% if p.email %}
+        <p class="text-xs text-gray-400">{{ p.email }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      {% if p.is_family %}
+        <span class="badge-family">Family</span>
+      {% endif %}
+      {% if p.birthday %}
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+          🎂 {{ p.birthday }}
+        </span>
+      {% endif %}
+      {% if p.last_contacted %}
+        <span class="text-xs text-gray-400">Last: {{ str(p.last_contacted)[:10] }}</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card text-center py-16">
+  <div class="text-5xl mb-4">👥</div>
+  <h3 class="text-lg font-semibold text-gray-800 mb-2">No relationships yet</h3>
+  <p class="text-gray-500 mb-6">Add family members and friends to start tracking birthdays and preferences.</p>
+  <button onclick="document.getElementById('addPersonModal').classList.remove('hidden')"
+    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors">
+    Add First Contact
+  </button>
+</div>
+{% endif %}
+
+<!-- Add Person Modal -->
+<div id="addPersonModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"
+       onclick="document.getElementById('addPersonModal').classList.add('hidden')"></div>
+  <div class="absolute inset-x-0 bottom-0 md:inset-auto md:top-1/2 md:left-1/2
+              md:-translate-x-1/2 md:-translate-y-1/2 bg-white rounded-t-2xl md:rounded-2xl
+              shadow-2xl w-full md:w-[500px] p-6 z-10">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Add a Contact</h3>
+    <div class="space-y-3">
+      <input id="newName" type="text" placeholder="Full name *"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+      <input id="newEmail" type="email" placeholder="Email address"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+      <input id="newBirthday" type="date" placeholder="Birthday (YYYY-MM-DD)"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+      <div class="flex gap-3">
+        <select id="newType" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none">
+          <option value="family">Family</option>
+          <option value="friend">Friend</option>
+          <option value="colleague">Colleague</option>
+          <option value="other">Other</option>
+        </select>
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" id="newIsFamily" class="rounded"/> Is family
+        </label>
+      </div>
+      <textarea id="newNotes" rows="2" placeholder="Notes (optional)"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      <div id="addPersonStatus" class="text-sm hidden"></div>
+      <div class="flex gap-3 pt-1">
+        <button onclick="addPerson()"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+          Add Contact
+        </button>
+        <button onclick="document.getElementById('addPersonModal').classList.add('hidden')"
+          class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API_KEY_VAL = "{{ config.API_KEY }}";
+async function addPerson() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { alert('Name is required'); return; }
+  const el = document.getElementById('addPersonStatus');
+  el.textContent = 'Saving…'; el.classList.remove('hidden');
+  el.className = 'text-sm text-gray-500';
+  const resp = await fetch('/api/relationship', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-API-Key': API_KEY_VAL || getApiKey()},
+    body: JSON.stringify({
+      name,
+      email: document.getElementById('newEmail').value.trim(),
+      birthday: document.getElementById('newBirthday').value,
+      relationship_type: document.getElementById('newType').value,
+      is_family: document.getElementById('newIsFamily').checked,
+      notes: document.getElementById('newNotes').value.trim(),
+    }),
+  });
+  const data = await resp.json();
+  if (data.success) {
+    el.textContent = '✓ Added! Redirecting…';
+    el.className = 'text-sm text-green-600';
+    setTimeout(() => window.location.href = `/relationship/${data.id}`, 800);
+  } else {
+    el.textContent = 'Error: ' + (data.error || 'Unknown');
+    el.className = 'text-sm text-red-500';
+  }
+}
+</script>
+{% endblock %}

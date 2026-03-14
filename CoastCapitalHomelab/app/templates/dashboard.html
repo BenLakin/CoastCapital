@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  Info widgets strip — system-level stats displayed at top like Homepage -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="info-strip">
+  <div class="info-widget" id="iw-cpu">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" stroke="currentColor" stroke-width="1.5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">CPU</div>
+      <div class="iw-value" id="iw-cpu-val">—</div>
+      <div class="iw-bar"><div class="iw-fill" id="iw-cpu-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="info-widget" id="iw-mem">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 10h16M4 14h7M4 18h7M15 14h5M15 18h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">Memory</div>
+      <div class="iw-value" id="iw-mem-val">—</div>
+      <div class="iw-bar"><div class="iw-fill" id="iw-mem-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="info-widget" id="iw-disk">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.5"/><path d="M9 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">Disk</div>
+      <div class="iw-value" id="iw-disk-val">—</div>
+      <div class="iw-bar"><div class="iw-fill" id="iw-disk-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="info-widget info-widget-gpu" id="iw-gpu">
+    <div class="iw-icon iw-icon-gpu">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 7V5M10 7V5M14 7V5M18 7V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label" id="iw-gpu-label">GPU</div>
+      <div class="iw-value" id="iw-gpu-val">—</div>
+      <div class="iw-sub" id="iw-gpu-sub">—</div>
+    </div>
+  </div>
+
+  <div class="info-widget" id="iw-network">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 3c-4 0-7 4.03-7 9s3 9 7 9 7-4.03 7-9-3-9-7-9z" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">WAN</div>
+      <div class="iw-value" id="iw-wan-ip">—</div>
+      <div class="iw-sub" id="iw-wan-speed">—</div>
+    </div>
+  </div>
+
+  <div class="info-widget" id="iw-dns">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">DNS Server</div>
+      <div class="iw-value" id="iw-dns-status">—</div>
+      <div class="iw-sub" id="iw-dns-records">—</div>
+    </div>
+  </div>
+
+  <div class="info-widget" id="iw-containers">
+    <div class="iw-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+    </div>
+    <div class="iw-body">
+      <div class="iw-label">Containers</div>
+      <div class="iw-value" id="iw-containers-running">—</div>
+      <div class="iw-sub" id="iw-containers-sub">running</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  Service groups — Homepage-style column layout                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="hp-services">
+
+  <!-- ── Group: Network ──────────────────────────────────────────────────── -->
+  <section class="svc-group">
+    <div class="svc-group-header">
+      <svg class="group-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M12 3c-4 0-7 4.03-7 9s3 9 7 9 7-4.03 7-9-3-9-7-9z" stroke="currentColor" stroke-width="1.5"/><path d="M3 12h18" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span>Network</span>
+    </div>
+    <div class="svc-cards">
+
+      <!-- UniFi Network -->
+      <div class="svc-card" id="card-unifi">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-unifi"></span>
+          <span class="svc-emoji">🌐</span>
+          <div class="svc-meta">
+            <div class="svc-name">UniFi Network</div>
+            <div class="svc-desc" id="unifi-isp">UDM Pro · Ubiquiti</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshUnifi()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">WAN IP</div>
+            <div class="block-value mono" id="unifi-wan-ip">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Speed</div>
+            <div class="block-value" id="unifi-speed">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">WiFi</div>
+            <div class="block-value" id="unifi-wifi">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Wired</div>
+            <div class="block-value" id="unifi-wired">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Uptime</div>
+            <div class="block-value" id="unifi-uptime">—</div>
+          </div>
+        </div>
+        <div class="svc-alerts" id="unifi-alerts-section" style="display:none">
+          <div class="alerts-label">Active Alerts</div>
+          <div id="unifi-alerts-list"></div>
+        </div>
+      </div>
+
+      <!-- CoreDNS -->
+      <div class="svc-card" id="card-dns">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-dns"></span>
+          <span class="svc-emoji">🔒</span>
+          <div class="svc-meta">
+            <div class="svc-name">DNS Server</div>
+            <div class="svc-desc">CoreDNS · Local Resolver</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshDNS()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Status</div>
+            <div class="block-value" id="dns-status">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Records</div>
+            <div class="block-value" id="dns-record-count">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Upstream</div>
+            <div class="block-value mono" id="dns-upstream">—</div>
+          </div>
+        </div>
+
+        <!-- Local DNS Records -->
+        <div class="dns-section">
+          <div class="dns-section-header">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h5l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Local DNS Records</span>
+            <button class="dns-refresh-btn" onclick="refreshDNSRecords()" title="Refresh records">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="dns-records-list" id="dns-records-list">
+            <div class="dns-loading">Loading…</div>
+          </div>
+          <div class="dns-add-form">
+            <input type="text" class="dns-input" id="dns-input-domain" placeholder="hostname.local" autocomplete="off" spellcheck="false" />
+            <input type="text" class="dns-input" id="dns-input-ip"     placeholder="192.168.1.x"   autocomplete="off" spellcheck="false" />
+            <button class="dns-add-btn" onclick="dnsAddRecord()" title="Add record">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Group: Security ────────────────────────────────────────────────── -->
+  <section class="svc-group">
+    <div class="svc-group-header">
+      <svg class="group-icon" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      <span>Security</span>
+    </div>
+    <div class="svc-cards">
+
+      <!-- UniFi Protect -->
+      <div class="svc-card" id="card-protect">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-protect"></span>
+          <span class="svc-emoji">📷</span>
+          <div class="svc-meta">
+            <div class="svc-name">UniFi Protect</div>
+            <div class="svc-desc">Security Cameras · NVR</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshProtect()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Cameras</div>
+            <div class="block-value" id="protect-count">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Recording</div>
+            <div class="block-value" id="protect-recording">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Connected</div>
+            <div class="block-value" id="protect-connected">—</div>
+          </div>
+        </div>
+        <div class="camera-grid" id="protect-cameras"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Group: Media & AI ─────────────────────────────────────────────── -->
+  <section class="svc-group">
+    <div class="svc-group-header">
+      <svg class="group-icon" viewBox="0 0 24 24" fill="none"><path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Media &amp; AI</span>
+    </div>
+    <div class="svc-cards">
+
+      <!-- Plex -->
+      <div class="svc-card" id="card-plex">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-plex"></span>
+          <span class="svc-emoji">🎬</span>
+          <div class="svc-meta">
+            <div class="svc-name">Plex</div>
+            <div class="svc-desc">Media Server</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshPlex()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Streams</div>
+            <div class="block-value" id="plex-streams">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Movies</div>
+            <div class="block-value" id="plex-movies">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Shows</div>
+            <div class="block-value" id="plex-shows">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Music</div>
+            <div class="block-value" id="plex-music">—</div>
+          </div>
+        </div>
+        <div class="stream-list" id="plex-now-playing"></div>
+      </div>
+
+      <!-- Ollama -->
+      <div class="svc-card" id="card-ollama">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-ollama"></span>
+          <span class="svc-emoji">🤖</span>
+          <div class="svc-meta">
+            <div class="svc-name">Ollama</div>
+            <div class="svc-desc">Local AI · LLM Server</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshOllama()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Models</div>
+            <div class="block-value" id="ollama-count">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Running</div>
+            <div class="block-value" id="ollama-running">—</div>
+          </div>
+        </div>
+        <div class="model-grid" id="ollama-models"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Group: Infrastructure ─────────────────────────────────────────── -->
+  <section class="svc-group">
+    <div class="svc-group-header">
+      <svg class="group-icon" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span>Infrastructure</span>
+    </div>
+    <div class="svc-cards">
+
+      <!-- System Health — dynamically populated per machine -->
+      <div id="system-machines">
+        <div class="hp-loading" id="system-machines-loading">Loading system health…</div>
+      </div>
+
+      <!-- Portainer -->
+      <div class="svc-card" id="card-portainer">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-portainer"></span>
+          <span class="svc-emoji">🐋</span>
+          <div class="svc-meta">
+            <div class="svc-name">Portainer</div>
+            <div class="svc-desc">Docker · Container Management</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshPortainer()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Running</div>
+            <div class="block-value block-value-good" id="portainer-running">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Stopped</div>
+            <div class="block-value block-value-muted" id="portainer-stopped">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Unhealthy</div>
+            <div class="block-value block-value-danger" id="portainer-unhealthy">—</div>
+          </div>
+        </div>
+        <div class="container-grid" id="portainer-containers"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Group: Automation & Dashboard ─────────────────────────────────── -->
+  <section class="svc-group">
+    <div class="svc-group-header">
+      <svg class="group-icon" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V21H3V9.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 21V12h6v9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      <span>Automation</span>
+    </div>
+    <div class="svc-cards">
+
+      <!-- Home Assistant -->
+      <div class="svc-card" id="card-ha">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-ha"></span>
+          <span class="svc-emoji">🏠</span>
+          <div class="svc-meta">
+            <div class="svc-name">Home Assistant</div>
+            <div class="svc-desc">Smart Home · Automations</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshHA()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Entities</div>
+            <div class="block-value" id="ha-entities">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Automations</div>
+            <div class="block-value" id="ha-automations">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">Alerts</div>
+            <div class="block-value" id="ha-alerts">—</div>
+          </div>
+        </div>
+        <div class="ha-alert-list" id="ha-alert-list"></div>
+      </div>
+
+      <!-- Homepage -->
+      <div class="svc-card" id="card-homepage">
+        <div class="svc-card-header">
+          <span class="svc-dot" id="dot-homepage"></span>
+          <span class="svc-emoji">📋</span>
+          <div class="svc-meta">
+            <div class="svc-name">Homepage</div>
+            <div class="svc-desc">Service Dashboard</div>
+          </div>
+          <button class="svc-action-btn" onclick="refreshHomepage()" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="svc-blocks">
+          <div class="svc-block">
+            <div class="block-label">Status</div>
+            <div class="block-value" id="homepage-status-val">—</div>
+          </div>
+          <div class="svc-block">
+            <div class="block-label">URL</div>
+            <div class="block-value mono" id="homepage-url">—</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- .hp-services -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  Camera Viewer                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="hp-panel cam-viewer-panel" id="cam-viewer-panel" style="display:none">
+  <div class="hp-panel-header">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Camera View</h2>
+    <span class="cam-viewer-name" id="cam-viewer-name">—</span>
+    <span id="cam-viewer-badges"></span>
+    <div style="flex:1"></div>
+    <button class="hp-panel-action" onclick="prevCamera()" title="Previous camera">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Prev
+    </button>
+    <button class="hp-panel-action" onclick="nextCamera()" title="Next camera" style="margin-left:4px">
+      Next
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="hp-panel-action" onclick="loadCameraSnapshot()" title="Refresh snapshot" style="margin-left:4px">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <div class="cam-viewer-body">
+    <div class="cam-viewer-img-wrap">
+      <img id="cam-snapshot-img" class="cam-snapshot-img" src="" alt="Camera snapshot" style="display:none" />
+      <div class="cam-snapshot-overlay" id="cam-snapshot-overlay">
+        <div class="cam-overlay-ts" id="cam-overlay-ts"></div>
+      </div>
+      <div class="cam-no-snapshot" id="cam-no-snapshot">Select a camera</div>
+    </div>
+    <div class="cam-selector-strip" id="cam-selector-strip"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  Events Log                                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="hp-panel" id="panel-events">
+  <div class="hp-panel-header">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Events Log</h2>
+    <button class="hp-panel-action" onclick="refreshEvents()">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Refresh
+    </button>
+  </div>
+  <div class="events-list" id="events-list">
+    <div class="hp-loading">Loading events…</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!--  HomeLabAgent Chat                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<section class="hp-panel" id="panel-agent">
+  <div class="hp-panel-header">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M16 14v2l1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <h2>HomeLabAgent</h2>
+    <span class="hp-panel-sub">AI-powered home lab developer</span>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-msg chat-assistant">
+      <div class="chat-avatar">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M9 10h.01M15 10h.01M9.5 14.5a3.5 3.5 0 005 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="chat-bubble">
+        Hello! I'm your HomeLab developer AI. Ask me to check system health, diagnose issues, manage containers, control Home Assistant, or anything else about your lab.
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-suggestions">
+    <button class="hp-chip" onclick="quickChat('Full status check of all services')">Full status check</button>
+    <button class="hp-chip" onclick="quickChat('Are there any container issues I should know about?')">Container health</button>
+    <button class="hp-chip" onclick="quickChat('What is the GPU temperature and utilization?')">GPU stats</button>
+    <button class="hp-chip" onclick="quickChat('Show me UniFi network alerts and security camera status')">Security status</button>
+    <button class="hp-chip" onclick="quickChat('What Ollama models are installed and how big are they?')">Ollama models</button>
+    <button class="hp-chip" onclick="quickChat('DNS server status — show me custom local records and upstream resolvers')">DNS records</button>
+  </div>
+
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" class="hp-input" placeholder="Ask HomeLabAgent anything…" />
+    <button class="hp-send-btn" id="chat-send" onclick="sendChat()">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

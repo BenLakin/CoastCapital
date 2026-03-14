@@ -1,0 +1,140 @@
+/* ============================================================
+   CoastCapital Brand System
+   Single source of truth for colors, typography, and shared UI
+   ============================================================ */
+
+:root {
+  /* ---- Brand Colors ---- */
+  --cc-brand-primary:    #00b4d8;   /* Cyan — primary accent */
+  --cc-brand-secondary:  #0077b6;   /* Deep blue — secondary accent */
+  --cc-brand-tertiary:   #90e0ef;   /* Light cyan — highlights */
+
+  /* ---- Semantic Colors ---- */
+  --cc-green:   #22c55e;
+  --cc-red:     #ef4444;
+  --cc-gold:    #f59e0b;
+  --cc-purple:  #a855f7;
+  --cc-orange:  #f97316;
+
+  /* ---- Surface & Background ---- */
+  --cc-bg-base:       #060a12;
+  --cc-bg-panel:      #0b1120;
+  --cc-bg-card:       #0f1929;
+  --cc-bg-card-hover: #152238;
+  --cc-bg-surface:    #1a1d21;
+
+  /* ---- Text ---- */
+  --cc-text-primary:   #e2e8f0;
+  --cc-text-secondary: #94a3b8;
+  --cc-text-muted:     #4b6280;
+
+  /* ---- Borders ---- */
+  --cc-border:       rgba(148, 163, 184, 0.12);
+  --cc-border-hover: rgba(148, 163, 184, 0.25);
+
+  /* ---- Typography ---- */
+  --cc-font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --cc-font-mono:  'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* ---- Spacing Scale ---- */
+  --cc-space-xs:  4px;
+  --cc-space-sm:  8px;
+  --cc-space-md:  16px;
+  --cc-space-lg:  24px;
+  --cc-space-xl:  32px;
+  --cc-space-2xl: 48px;
+
+  /* ---- Border Radius ---- */
+  --cc-radius-sm:  6px;
+  --cc-radius-md:  10px;
+  --cc-radius-lg:  16px;
+
+  /* ---- Shadows ---- */
+  --cc-shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+  --cc-shadow-elevated: 0 4px 16px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
+
+  /* ---- Glassmorphism ---- */
+  --cc-glass-bg: rgba(11, 17, 32, 0.75);
+  --cc-glass-blur: blur(12px);
+}
+
+/* ---- Base Reset ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--cc-font-sans);
+  background: var(--cc-bg-base);
+  color: var(--cc-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+code, pre, .mono {
+  font-family: var(--cc-font-mono);
+}
+
+/* ---- Shared Card ---- */
+.cc-card {
+  background: var(--cc-bg-card);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-md);
+  box-shadow: var(--cc-shadow-card);
+  padding: var(--cc-space-lg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cc-card:hover {
+  border-color: var(--cc-border-hover);
+  box-shadow: var(--cc-shadow-elevated);
+}
+
+/* ---- Shared Glass Header ---- */
+.cc-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--cc-glass-bg);
+  backdrop-filter: var(--cc-glass-blur);
+  -webkit-backdrop-filter: var(--cc-glass-blur);
+  border-bottom: 1px solid var(--cc-border);
+  padding: var(--cc-space-sm) var(--cc-space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--cc-space-md);
+  height: 52px;
+}
+
+/* ---- Brand Logo Text ---- */
+.cc-logo {
+  font-family: var(--cc-font-mono);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--cc-brand-primary);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.cc-logo-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* ---- Status Indicators ---- */
+.cc-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cc-status--ok      { background: var(--cc-green); box-shadow: 0 0 6px var(--cc-green); }
+.cc-status--warn    { background: var(--cc-gold); box-shadow: 0 0 6px var(--cc-gold); }
+.cc-status--error   { background: var(--cc-red); box-shadow: 0 0 6px var(--cc-red); }
+
+/* ---- Utility Classes ---- */
+.cc-text-green  { color: var(--cc-green); }
+.cc-text-red    { color: var(--cc-red); }
+.cc-text-gold   { color: var(--cc-gold); }
+.cc-text-muted  { color: var(--cc-text-muted); }
+.cc-text-accent { color: var(--cc-brand-primary); }
+.cc-bg-panel    { background: var(--cc-bg-panel); }

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceAgent — Model Management</title>
+  <link rel="icon" href="/static/brand/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/brand/css/brand.css">
+  <link rel="stylesheet" href="/static/brand/css/nav.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/models.css" />
+</head>
+<body data-cc-module="finance" data-cc-page="models">
+
+  <!-- ══════════════════════════ FINANCE NAV BAR ══════════════════════════ -->
+  <div class="finance-nav">
+    <div class="nav-left">
+      <span class="nav-brand">Coast Capital</span>
+      <span class="nav-separator">|</span>
+      <span class="nav-module">Finance</span>
+    </div>
+    <div class="nav-links">
+      <a href="/dashboard" class="nav-link">Dashboard</a>
+      <a href="/models" class="nav-link active">Models</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ MAIN LAYOUT ══════════════════════════════ -->
+  <main class="models-layout">
+
+    <!-- ── LEFT PANEL: Ticker Selector + Actions ─────────────────────────── -->
+    <aside class="panel panel-sidebar">
+
+      <!-- Ticker Pills -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <h2 class="section-title">Tickers</h2>
+        </div>
+        <div class="ticker-pills" id="tickerPills">
+          <div class="panel-loading"><div class="skeleton" style="height:32px"></div></div>
+        </div>
+      </div>
+
+      <!-- Champion Summary -->
+      <div class="sidebar-section" id="championSummary" style="display:none;">
+        <div class="section-header">
+          <span class="status-badge badge-champion">CHAMPION</span>
+          <span class="champion-seq" id="championSeq"></span>
+        </div>
+        <div class="champion-card" id="championCard">
+          <div class="metric-row">
+            <span class="metric-label">Dir. Accuracy</span>
+            <span class="metric-value" id="champDirAcc">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Sharpe Ratio</span>
+            <span class="metric-value" id="champSharpe">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Alpha</span>
+            <span class="metric-value" id="champAlpha">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Max Drawdown</span>
+            <span class="metric-value" id="champMaxDD">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">HPO Method</span>
+            <span class="metric-value" id="champHPO">—</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Trained</span>
+            <span class="metric-value" id="champTrained">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <h2 class="section-title">Actions</h2>
+        </div>
+        <div class="action-form">
+          <label class="form-label">HPO Method</label>
+          <div class="radio-group" id="hpoRadios">
+            <label class="radio-label"><input type="radio" name="hpo" value="none" checked /> None (fast)</label>
+            <label class="radio-label"><input type="radio" name="hpo" value="grid" /> Grid (~30s)</label>
+            <label class="radio-label"><input type="radio" name="hpo" value="bayesian" /> Bayesian (~5m)</label>
+          </div>
+          <button class="btn-action btn-train" id="btnRetrain">
+            <span class="btn-icon-inline">+</span> Retrain Model
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── CENTER PANEL: Versions + Comparison ───────────────────────────── -->
+    <section class="panel panel-main">
+
+      <!-- Selected Ticker Header -->
+      <div class="main-header">
+        <h1 class="main-title" id="mainTitle">Select a ticker</h1>
+        <span class="main-subtitle" id="mainSubtitle"></span>
+      </div>
+
+      <!-- Versions Table -->
+      <div class="versions-section">
+        <div class="section-header">
+          <h2 class="section-title">Model Versions</h2>
+        </div>
+        <div class="table-wrapper">
+          <table class="versions-table" id="versionsTable">
+            <thead>
+              <tr>
+                <th>Seq</th>
+                <th>Status</th>
+                <th>HPO</th>
+                <th>Dir Acc</th>
+                <th>Sharpe</th>
+                <th>Alpha</th>
+                <th>Max DD</th>
+                <th>Trained</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="versionsBody">
+              <tr><td colspan="9" class="empty-state">Select a ticker to view models</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Comparison Panel -->
+      <div class="comparison-section" id="comparisonSection" style="display:none;">
+        <div class="section-header">
+          <h2 class="section-title">Champion vs Candidate</h2>
+          <span class="comparison-verdict" id="comparisonVerdict"></span>
+        </div>
+        <div class="comparison-grid" id="comparisonGrid"></div>
+        <div class="comparison-actions" id="comparisonActions"></div>
+      </div>
+
+      <!-- Feature Importance -->
+      <div class="feature-section" id="featureSection" style="display:none;">
+        <div class="section-header">
+          <h2 class="section-title">Feature Importance</h2>
+          <span class="section-subtitle" id="featureHorizon"></span>
+        </div>
+        <div class="feature-chart-wrapper">
+          <canvas id="featureChart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ══════════════════════════ TOAST NOTIFICATIONS ═══════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/static/js/models.js"></script>
+  <script src="/static/brand/js/nav.js"></script>
+</body>
+</html>

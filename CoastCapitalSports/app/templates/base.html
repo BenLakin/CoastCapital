@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Coast Capital Sports{% endblock %}</title>
+    <link rel="icon" href="/static/brand/img/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/brand/css/brand.css">
+    <link rel="stylesheet" href="/static/brand/css/nav.css">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <!-- Custom styles -->
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body data-cc-module="sports" data-cc-page="{{ active_page or 'dashboard' }}">
+
+    <!-- Main content -->
+    <main class="container-fluid px-4 py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-muted py-3 border-top border-secondary mt-4">
+        <small>Coast Capital Sports Analytics &mdash; Enterprise Sports Prediction Platform</small>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/brand/js/nav.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

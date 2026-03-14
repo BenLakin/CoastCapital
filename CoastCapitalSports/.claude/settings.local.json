@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:site.api.espn.com)",
+      "WebFetch(domain:sports.core.api.espn.com)",
+      "Bash(curl -s \"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20250301\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \":*)",
+      "Bash(curl -s \"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=401708421\")",
+      "Bash(curl -s \"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/rankings\")",
+      "Bash(curl -s \"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/standings\")",
+      "Bash(__NEW_LINE_297adad3c0d128a3__ echo \"===\")",
+      "Bash(curl -s \"https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/teams/2/powerindex?season=2025\")",
+      "Bash(__NEW_LINE_c6cfb7cf5a8a98c8__ echo \"===\")",
+      "Bash(curl -s \"https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/powerindex?limit=10\")",
+      "Bash(curl -s \"https://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/seasons/2025/powerindex/2\")",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''text'']\\)\")",
+      "Bash(find /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports/app -name \"__init__.py\" -exec wc -l {} +)",
+      "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports/scripts/run_daily.py /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports/scripts/run_weekly.py)"
+    ]
+  }
+}

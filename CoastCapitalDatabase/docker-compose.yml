@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: coastcapital-mysql
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-dbadmin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/config/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+      - ./mysql/scripts:/scripts:ro
+      - ./logs/mysql:/var/log/mysql
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  maintenance-api:
+    build:
+      context: ./maintenance-api
+      dockerfile: Dockerfile
+    container_name: coastcapital-db-maintenance
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_MAINTENANCE_USER:-maintenance}
+      MYSQL_PASSWORD: ${MYSQL_MAINTENANCE_PASSWORD:-maintenance_pass}
+      API_KEY: ${MAINTENANCE_API_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./maintenance-api/app.py:/app/app.py
+      - ./logs/maintenance:/app/logs
+    networks:
+      - db-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  db-network:
+    name: coastcapitaldatabase_db-network
+    driver: bridge

@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+{% block title %}{{ profile.person.name }} · Relationship Profile{% endblock %}
+
+{% block content %}
+{% set person = profile.person %}
+{% set prefs = profile.preferences %}
+{% set gifts = profile.gifts %}
+{% set interactions = profile.interactions %}
+{% set days_bday = profile.days_until_birthday %}
+
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between flex-wrap gap-4">
+  <div class="flex items-center gap-4">
+    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600
+                flex items-center justify-center text-white text-2xl font-bold shadow">
+      {{ person.name[0] | upper }}
+    </div>
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900">{{ person.name }}</h2>
+      <div class="flex items-center gap-2 mt-1 flex-wrap">
+        {% if person.email %}
+          <span class="text-sm text-gray-500">{{ person.email }}</span>
+        {% endif %}
+        {% if person.relationship_type %}
+          <span class="badge-family">{{ person.relationship_type }}</span>
+        {% endif %}
+        {% if days_bday is not none %}
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                       {% if days_bday == 0 %}bg-rose-500 text-white
+                       {% elif days_bday <= 7 %}bg-orange-100 text-orange-700
+                       {% else %}bg-blue-100 text-blue-700{% endif %}">
+            🎂 {% if days_bday == 0 %}Birthday TODAY!{% elif days_bday == 1 %}Birthday Tomorrow!{% else %}Birthday in {{ days_bday }} days{% endif %}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <button onclick="openEmailModal('','{{ person.email }}','Happy Birthday {{ person.name }}!','')"
+      class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-xl transition-colors">
+      📧 Send Email
+    </button>
+    <a href="/relationships" class="border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm px-4 py-2 rounded-xl transition-colors">
+      ← All Contacts
+    </a>
+  </div>
+</div>
+
+{% if days_bday is not none and days_bday <= 21 %}
+<!-- Birthday Prompt Banner -->
+<div class="mb-6 p-5 bg-rose-50 border border-rose-200 rounded-2xl">
+  <div class="flex items-start gap-3">
+    <span class="text-2xl">🎁</span>
+    <div class="flex-1">
+      <h3 class="font-semibold text-rose-800">
+        {% if days_bday == 0 %}It's {{ person.name }}'s birthday today!
+        {% elif days_bday <= 7 %}Birthday coming up in {{ days_bday }} day{{ 's' if days_bday != 1 }}!
+        {% else %}Birthday in {{ days_bday }} days — time to plan!{% endif %}
+      </h3>
+      <p class="text-rose-700 text-sm mt-1">
+        {% if prefs | length < 3 %}
+          Preferences are sparse. Add what {{ person.name }} likes below so AssistantAgent can suggest the perfect gift.
+        {% else %}
+          {{ prefs | length }} preference{{ 's' if prefs|length != 1 }} on record.
+          <a onclick="generateGiftIdeas()" href="#gifts" class="underline cursor-pointer font-medium">Get gift suggestions →</a>
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT: Preferences -->
+  <div class="lg:col-span-2 space-y-6">
+
+    <!-- Preferences List -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-gray-800">Preferences & Tastes</h3>
+        <span class="text-xs text-gray-400">{{ prefs | length }} recorded</span>
+      </div>
+
+      {% if prefs %}
+        {% set grouped = {} %}
+        {% for p in prefs %}
+          {% if p.category not in grouped %}{% set _ = grouped.update({p.category: []}) %}{% endif %}
+          {% set _ = grouped[p.category].append(p) %}
+        {% endfor %}
+        <div class="space-y-4">
+          {% for cat, items in grouped.items() %}
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{{ cat }}</p>
+            <div class="flex flex-wrap gap-2">
+              {% for item in items %}
+              <div class="group relative inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100
+                          hover:bg-gray-200 rounded-full text-sm text-gray-700 transition-colors">
+                {{ item.preference }}
+                <span class="text-xs text-gray-400 hidden group-hover:inline">({{ item.source }})</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-sm text-gray-400 py-3">No preferences recorded yet. Use the form below to add some.</p>
+      {% endif %}
+
+      <!-- Add Preference Form -->
+      <div class="mt-5 pt-4 border-t border-gray-100">
+        <p class="text-sm font-medium text-gray-700 mb-3">Log a new preference</p>
+        <div class="flex gap-2 flex-wrap">
+          <select id="prefCategory" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+          <input id="prefValue" type="text" placeholder="e.g. Italian food, hiking, mystery novels…"
+            class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            onkeydown="if(event.key==='Enter') addPreference()"/>
+          <button onclick="addPreference()"
+            class="bg-slate-800 hover:bg-slate-700 text-white text-sm px-4 py-2 rounded-lg transition-colors">
+            Add
+          </button>
+        </div>
+        <div id="prefStatus" class="text-xs text-gray-500 mt-2 hidden"></div>
+      </div>
+    </div>
+
+    <!-- Gifts -->
+    <div class="card" id="gifts">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-gray-800">Gift History & Ideas</h3>
+        <button onclick="generateGiftIdeas()"
+          class="text-sm bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-lg transition-colors">
+          ✨ Get AI Suggestions
+        </button>
+      </div>
+
+      {% if gifts %}
+      <div class="space-y-2 mb-4">
+        {% for g in gifts %}
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
+          <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0
+            {% if g.status == 'given' %}bg-green-500
+            {% elif g.status == 'ordered' %}bg-blue-500
+            {% elif g.status == 'idea' %}bg-yellow-400
+            {% else %}bg-gray-300{% endif %}">
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800">{{ g.gift_description }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">
+              {{ g.occasion }}{% if g.occasion_date %} · {{ g.occasion_date }}{% endif %}
+              {% if g.price %} · {{ g.price }}{% endif %}
+              · <span class="capitalize">{{ g.status }}</span>
+            </p>
+            {% if g.reaction %}
+            <p class="text-xs text-gray-600 mt-1 italic">"{{ g.reaction }}"</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="text-sm text-gray-400 mb-4">No gifts recorded yet.</p>
+      {% endif %}
+
+      <!-- Gift Suggestions (populated by JS) -->
+      <div id="giftSuggestions" class="hidden">
+        <div class="border-t border-gray-100 pt-4">
+          <p class="text-sm font-medium text-gray-700 mb-3">✨ AI Gift Suggestions</p>
+          <div id="giftList" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Budget selector (shown with suggestions) -->
+      <div id="budgetRow" class="hidden mt-3 flex gap-2 items-center flex-wrap">
+        <label class="text-sm text-gray-600">Budget:</label>
+        <select id="budgetSelect" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+          <option value="any">Any</option>
+          <option value="under $25">Under $25</option>
+          <option value="$25-$50">$25–$50</option>
+          <option value="$50-$100">$50–$100</option>
+          <option value="$100-$200">$100–$200</option>
+          <option value="over $200">Over $200</option>
+        </select>
+        <button onclick="generateGiftIdeas()"
+          class="text-sm bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+          Regenerate
+        </button>
+      </div>
+
+      <!-- Add gift manually -->
+      <div class="mt-4 pt-4 border-t border-gray-100">
+        <p class="text-sm font-medium text-gray-700 mb-2">Log a gift</p>
+        <div class="flex gap-2 flex-wrap">
+          <input id="giftDesc" type="text" placeholder="Gift description…"
+            class="flex-1 min-w-48 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+          <select id="giftStatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none">
+            <option value="idea">Idea</option>
+            <option value="ordered">Ordered</option>
+            <option value="given">Given</option>
+          </select>
+          <input id="giftReaction" type="text" placeholder="Reaction (optional)"
+            class="flex-1 min-w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+          <button onclick="logGift()"
+            class="bg-slate-800 hover:bg-slate-700 text-white text-sm px-4 py-2 rounded-lg transition-colors">
+            Save
+          </button>
+        </div>
+        <div id="giftStatus2" class="text-xs text-gray-500 mt-2 hidden"></div>
+      </div>
+    </div>
+
+  </div><!-- end left col -->
+
+  <!-- RIGHT: Interactions + Notes -->
+  <div class="space-y-6">
+
+    <!-- Quick Stats -->
+    <div class="card">
+      <h3 class="font-semibold text-gray-800 mb-3">Quick Info</h3>
+      <dl class="space-y-2 text-sm">
+        {% if person.birthday %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Birthday</dt>
+          <dd class="font-medium text-gray-800">{{ person.birthday }}</dd>
+        </div>
+        {% endif %}
+        {% if person.phone %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Phone</dt>
+          <dd class="font-medium text-gray-800">{{ person.phone }}</dd>
+        </div>
+        {% endif %}
+        {% if person.last_contacted %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Last Contact</dt>
+          <dd class="font-medium text-gray-800">{{ str(person.last_contacted)[:10] }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Preferences</dt>
+          <dd class="font-medium text-gray-800">{{ prefs | length }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Gifts Recorded</dt>
+          <dd class="font-medium text-gray-800">{{ gifts | length }}</dd>
+        </div>
+      </dl>
+      {% if person.notes %}
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <p class="text-xs text-gray-500 mb-1">Notes</p>
+        <p class="text-sm text-gray-700">{{ person.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Interaction History -->
+    <div class="card">
+      <h3 class="font-semibold text-gray-800 mb-3">Interaction History</h3>
+      {% if interactions %}
+      <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+        {% for i in interactions %}
+        <div class="p-2.5 rounded-lg bg-gray-50 text-sm">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-medium text-gray-700 capitalize">{{ i.type }}</span>
+            <span class="text-xs text-gray-400">{{ str(i.interaction_at)[:10] }}</span>
+          </div>
+          <p class="text-gray-600 mt-0.5 text-xs line-clamp-2">{{ i.summary }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="text-sm text-gray-400">No interactions logged.</p>
+      {% endif %}
+
+      <!-- Log interaction -->
+      <div class="mt-4 pt-3 border-t border-gray-100 space-y-2">
+        <select id="interactionType" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none">
+          <option value="note">Note</option>
+          <option value="email_sent">Email Sent</option>
+          <option value="email_received">Email Received</option>
+          <option value="call">Call</option>
+          <option value="in_person">In Person</option>
+          <option value="gift_given">Gift Given</option>
+        </select>
+        <textarea id="interactionNote" rows="2" placeholder="Summary of interaction…"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        <button onclick="logInteraction()"
+          class="w-full bg-slate-800 hover:bg-slate-700 text-white text-sm py-2 rounded-lg transition-colors">
+          Log Interaction
+        </button>
+        <div id="interactionStatus" class="text-xs text-gray-500 hidden"></div>
+      </div>
+    </div>
+
+  </div><!-- end right col -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const REL_ID = {{ profile.person.id }};
+const API_KEY_VAL = "{{ config.API_KEY }}";
+
+function apiKey() { return API_KEY_VAL || getApiKey(); }
+
+async function addPreference() {
+  const cat = document.getElementById('prefCategory').value;
+  const val = document.getElementById('prefValue').value.trim();
+  if (!val) return;
+  const el = document.getElementById('prefStatus');
+  el.textContent = 'Saving…'; el.classList.remove('hidden');
+  const resp = await fetch(`/api/relationship/${REL_ID}/preferences`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-API-Key': apiKey()},
+    body: JSON.stringify({category: cat, preference: val}),
+  });
+  const data = await resp.json();
+  if (data.success) {
+    el.textContent = '✓ Saved! Reloading…';
+    document.getElementById('prefValue').value = '';
+    setTimeout(() => location.reload(), 800);
+  } else {
+    el.textContent = 'Error: ' + (data.error || 'Unknown');
+  }
+}
+
+async function generateGiftIdeas() {
+  const budget = document.getElementById('budgetSelect')?.value || 'any';
+  document.getElementById('giftSuggestions').classList.remove('hidden');
+  document.getElementById('budgetRow').classList.remove('hidden');
+  document.getElementById('giftList').innerHTML = '<p class="text-sm text-gray-400 animate-pulse">Asking Claude for ideas…</p>';
+  const resp = await fetch(`/api/relationship/${REL_ID}/gift-suggestions`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-API-Key': apiKey()},
+    body: JSON.stringify({budget}),
+  });
+  const data = await resp.json();
+  const list = document.getElementById('giftList');
+  if (data.success && data.data.suggestions) {
+    list.innerHTML = '';
+    data.data.suggestions.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'p-3 bg-rose-50 border border-rose-100 rounded-xl';
+      div.innerHTML = `
+        <p class="font-medium text-gray-900 text-sm">${s.gift}</p>
+        <p class="text-xs text-gray-600 mt-1">${s.reason}</p>
+        <div class="flex items-center justify-between mt-2">
+          <span class="text-xs font-medium text-rose-600">${s.estimated_price || ''}</span>
+          ${s.purchase_url ? `<a href="${s.purchase_url}" target="_blank" class="text-xs text-blue-600 hover:underline">Find it →</a>` : ''}
+        </div>`;
+      list.appendChild(div);
+    });
+  } else {
+    list.innerHTML = `<p class="text-sm text-red-500">Error: ${data.error || 'Could not generate suggestions'}</p>`;
+  }
+}
+
+async function logGift() {
+  const desc = document.getElementById('giftDesc').value.trim();
+  const status = document.getElementById('giftStatus').value;
+  const reaction = document.getElementById('giftReaction').value.trim();
+  if (!desc) return;
+  const el = document.getElementById('giftStatus2');
+  el.textContent = 'Saving…'; el.classList.remove('hidden');
+  const resp = await fetch(`/api/relationship/${REL_ID}/gifts`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-API-Key': apiKey()},
+    body: JSON.stringify({gift_description: desc, status, reaction}),
+  });
+  const data = await resp.json();
+  if (data.success) {
+    el.textContent = '✓ Gift logged!';
+    document.getElementById('giftDesc').value = '';
+    document.getElementById('giftReaction').value = '';
+    setTimeout(() => location.reload(), 800);
+  } else {
+    el.textContent = 'Error: ' + (data.error || '');
+  }
+}
+
+async function logInteraction() {
+  const type = document.getElementById('interactionType').value;
+  const summary = document.getElementById('interactionNote').value.trim();
+  if (!summary) return;
+  const el = document.getElementById('interactionStatus');
+  el.textContent = 'Saving…'; el.classList.remove('hidden');
+  const resp = await fetch(`/api/relationship/${REL_ID}/interactions`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-API-Key': apiKey()},
+    body: JSON.stringify({type, summary}),
+  });
+  const data = await resp.json();
+  if (data.success) {
+    el.textContent = '✓ Logged!';
+    document.getElementById('interactionNote').value = '';
+    setTimeout(() => location.reload(), 800);
+  } else {
+    el.textContent = 'Error: ' + (data.error || '');
+  }
+}
+</script>
+{% endblock %}

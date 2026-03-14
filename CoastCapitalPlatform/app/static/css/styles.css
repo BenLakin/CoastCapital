@@ -1,0 +1,131 @@
+/* Platform Module — Custom Styles */
+
+body {
+    background: var(--cc-bg-base, #060a12);
+    color: var(--cc-text-primary, #e2e8f0);
+    font-family: var(--cc-font-sans, 'Inter', sans-serif);
+}
+
+.card {
+    background: var(--cc-bg-card, #0f1929);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--cc-radius-md, 10px);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--cc-text-secondary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: var(--cc-font-mono, monospace);
+}
+
+/* Table styling */
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    --bs-table-hover-bg: rgba(0, 180, 216, 0.08);
+}
+
+.table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cc-text-secondary, #94a3b8);
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+    border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Confidence badges */
+.confidence-high { color: var(--cc-green, #22c55e); }
+.confidence-med  { color: var(--cc-gold, #f59e0b); }
+.confidence-low  { color: var(--cc-red, #ef4444); }
+
+/* Vote buttons */
+.vote-btn {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.vote-btn:hover {
+    transform: scale(1.05);
+}
+
+.vote-btn-up {
+    color: var(--cc-green, #22c55e);
+    border-color: var(--cc-green, #22c55e);
+}
+.vote-btn-up:hover, .vote-btn-up.active {
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.vote-btn-down {
+    color: var(--cc-red, #ef4444);
+    border-color: var(--cc-red, #ef4444);
+}
+.vote-btn-down:hover, .vote-btn-down.active {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* User text truncation */
+.user-text-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Intent badge */
+.intent-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: var(--cc-font-mono, monospace);
+    background: rgba(0, 180, 216, 0.12);
+    color: var(--cc-brand-primary, #00b4d8);
+}
+
+/* Filter buttons */
+.btn-group .btn.active {
+    background: var(--cc-brand-primary, #00b4d8) !important;
+    border-color: var(--cc-brand-primary, #00b4d8) !important;
+    color: #fff !important;
+}
+
+/* Modal fixes for dark mode */
+.modal-content {
+    background: var(--cc-bg-card, #0f1929) !important;
+}
+
+.form-select, .form-control {
+    background: var(--cc-bg-panel, #0b1120) !important;
+    color: var(--cc-text-primary, #e2e8f0) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: var(--cc-brand-primary, #00b4d8) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 180, 216, 0.2) !important;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .stat-value { font-size: 1.2rem; }
+    .user-text-cell { max-width: 150px; }
+}

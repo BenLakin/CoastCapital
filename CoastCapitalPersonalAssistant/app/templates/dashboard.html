@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · CoastCapital Assistant{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h2 class="text-2xl font-bold text-gray-900">Good morning, {{ owner }} 👋</h2>
+  <p class="text-gray-500 mt-1 text-sm">Here's what's on your radar today.</p>
+</div>
+
+<!-- Morning Briefing Banner -->
+{% if data.morning_briefing %}
+<div class="card mb-6 bg-gradient-to-r from-slate-800 to-slate-700 text-white border-0">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div class="flex-1">
+      <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+        ☀️ Morning Briefing — {{ data.morning_briefing.briefing_date }}
+        {% if data.morning_briefing.emailed %}<span class="ml-2 text-green-400">✓ Emailed</span>{% endif %}
+      </p>
+      <pre class="text-sm text-slate-200 whitespace-pre-wrap font-sans leading-relaxed max-h-44 overflow-y-auto">{{ data.morning_briefing.content }}</pre>
+    </div>
+    <button onclick="runPipeline('morning-briefing', 'POST', {send_email: true})"
+      class="flex-shrink-0 bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-1.5 rounded-lg transition-colors">
+      📧 Email Me
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Weather Widget -->
+{% if data.weather %}
+<div class="card mb-6">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <!-- Current conditions -->
+    <div class="flex items-center gap-4">
+      <div class="text-5xl leading-none">{{ data.weather.current.icon }}</div>
+      <div>
+        <p class="text-3xl font-bold text-gray-900">{{ data.weather.current.temp_f|round|int }}&deg;F</p>
+        <p class="text-sm text-gray-500">{{ data.weather.current.description }}</p>
+        <p class="text-xs text-gray-400">{{ data.weather.location }}</p>
+      </div>
+    </div>
+    <div class="flex gap-6 text-sm text-gray-600">
+      <div class="text-center">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Feels like</p>
+        <p class="font-semibold">{{ data.weather.current.feels_like_f|round|int }}&deg;</p>
+      </div>
+      <div class="text-center">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Humidity</p>
+        <p class="font-semibold">{{ data.weather.current.humidity }}%</p>
+      </div>
+      <div class="text-center">
+        <p class="text-xs text-gray-400 uppercase tracking-wide">Wind</p>
+        <p class="font-semibold">{{ data.weather.current.wind_mph|round|int }} mph</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5-day forecast -->
+  {% if data.weather.forecast %}
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-4 pt-4 border-t border-gray-100">
+    {% for day in data.weather.forecast %}
+    <div class="text-center p-2 rounded-xl {% if loop.first %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+      <p class="text-xs font-semibold text-gray-500 uppercase">{{ day.day_name }}</p>
+      <p class="text-2xl my-1">{{ day.icon }}</p>
+      <p class="text-sm font-bold text-gray-800">{{ day.high_f|round|int }}&deg;</p>
+      <p class="text-xs text-gray-400">{{ day.low_f|round|int }}&deg;</p>
+      {% if day.precip_chance and day.precip_chance > 0 %}
+      <p class="text-xs text-blue-500 mt-0.5">{{ day.precip_chance }}%</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Birthdays + Travel (urgent) -->
+{% if data.birthdays or data.travel %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  {% if data.birthdays %}
+  <div class="card">
+    <h3 class="font-semibold text-gray-800 mb-3">🎂 Upcoming Birthdays</h3>
+    <div class="space-y-2">
+      {% for b in data.birthdays %}
+      <a href="/relationship/{{ b.id }}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-gray-50 transition-colors group">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-sm font-bold">{{ b.name[0]|upper }}</div>
+          <div>
+            <p class="text-sm font-medium text-gray-800 group-hover:text-blue-600">{{ b.name }}</p>
+            <p class="text-xs text-gray-500">{{ b.birthday }}</p>
+          </div>
+        </div>
+        <span class="text-xs font-medium px-2 py-1 rounded-full {% if b.days_away == 0 %}bg-rose-500 text-white{% elif b.days_away <= 7 %}bg-orange-100 text-orange-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+          {% if b.days_away == 0 %}TODAY!{% elif b.days_away == 1 %}Tomorrow{% else %}{{ b.days_away }}d{% endif %}
+        </span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% if data.travel %}
+  <div class="card">
+    <h3 class="font-semibold text-gray-800 mb-3">✈️ Upcoming Travel</h3>
+    <div class="space-y-2">
+      {% for t in data.travel %}
+      <div class="p-2.5 rounded-xl bg-gray-50">
+        <p class="text-sm font-medium text-gray-800">{{ t.trip_name or t.destination }}</p>
+        <p class="text-xs text-gray-500">{{ t.booking_type|title }} · {{ t.carrier }}{% if t.depart_date %} · {{ t.depart_date }}{% endif %}{% if t.return_date %} → {{ t.return_date }}{% endif %}</p>
+        {% if t.confirmation_num %}<p class="text-xs text-gray-400 font-mono">Conf: {{ t.confirmation_num }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Follow-ups Awaiting Reply -->
+{% if data.followups %}
+<div class="card mb-6">
+  <h3 class="font-semibold text-gray-800 mb-3">⏳ Awaiting Replies</h3>
+  <div class="space-y-2">
+    {% for f in data.followups %}
+    <div id="fu-{{ f.id }}" class="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-800 truncate">{{ f.to_addr }}</p>
+        <p class="text-xs text-gray-600 italic truncate">"{{ f.subject }}"</p>
+        <p class="text-xs text-amber-600">Waiting {{ f.days_waiting }} day{{ 's' if f.days_waiting != 1 }}</p>
+      </div>
+      <div class="flex gap-1.5 flex-shrink-0">
+        <button onclick="openEmailModal('','{{ f.to_addr }}','Re: {{ f.subject|e }}','')"
+          class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg">Reply</button>
+        <button onclick="dismissFollowup({{ f.id }})"
+          class="text-xs border border-gray-200 hover:bg-gray-50 text-gray-500 px-2 py-1 rounded-lg">✕</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Top row: Email + Action Items -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Recent Emails -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-800">Recent Emails</h3>
+      <span class="text-xs text-gray-400">{{ data.emails | length }} messages</span>
+    </div>
+    {% if data.emails %}
+      <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+        {% for email in data.emails %}
+        <div class="flex gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors
+                    {% if email.is_family %}ring-1 ring-rose-200{% endif %}">
+          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-medium text-slate-600 flex-shrink-0">
+            {{ (email.from_addr or '?')[0] | upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-medium text-gray-800 truncate">{{ email.from_addr }}</span>
+              {% if email.is_family %}<span class="badge-family">Family</span>{% endif %}
+            </div>
+            <p class="text-xs text-gray-500 truncate mt-0.5">{{ email.subject }}</p>
+            <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ email.summary }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-gray-400 py-4 text-center">No recent emails cached. Run the email pipeline first.</p>
+    {% endif %}
+  </div>
+
+  <!-- Action Items -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-800">Action Items</h3>
+      <a href="/communications" class="text-xs text-blue-600 hover:underline">View all →</a>
+    </div>
+    {% if data.action_items %}
+      <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+        {% for item in data.action_items[:8] %}
+        <div class="p-3 rounded-xl bg-gray-50 priority-{{ item.priority or 5 }}">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-800">{{ item.title }}</p>
+              {% if item.detail %}
+              <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ item.detail }}</p>
+              {% endif %}
+            </div>
+            {% if item.action_type == 'email' and item.recipient %}
+            <button onclick="openEmailModal('{{ item.id }}','{{ item.recipient }}','{{ item.email_subject | e }}','{{ item.email_body | e }}')"
+              class="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+              Send Email
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-gray-400 py-4 text-center">No action items yet. Run the comms plan pipeline.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Middle row: News + Deliveries -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- News -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-800">News Highlights</h3>
+      <span class="text-xs text-gray-400">World · Tech · AI · B2B</span>
+    </div>
+    {% if data.news %}
+      {% set categories = data.news | groupby('category') %}
+      {% for cat, articles in categories %}
+      <div class="mb-4">
+        <span class="badge-{{ cat }} mb-2">{{ cat | upper }}</span>
+        {% for article in articles[:3] %}
+        <div class="mt-2">
+          <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer"
+             class="text-sm font-medium text-gray-800 hover:text-blue-600 line-clamp-1">{{ article.title }}</a>
+          <p class="text-xs text-gray-500 line-clamp-2 mt-0.5">{{ article.summary }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-sm text-gray-400 py-4 text-center">No news cached. Run the news pipeline.</p>
+    {% endif %}
+  </div>
+
+  <!-- Deliveries & Upcoming Events -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-800">Deliveries & Events</h3>
+    </div>
+
+    {% if data.deliveries %}
+    <div class="mb-4">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Packages</p>
+      <div class="space-y-2">
+        {% for d in data.deliveries %}
+        <div class="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+          <div class="w-2 h-2 rounded-full
+            {% if d.status == 'Delivered' %}bg-green-500
+            {% elif d.status == 'Out for Delivery' %}bg-blue-500
+            {% else %}bg-yellow-400{% endif %}"></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">{{ d.description }}</p>
+            <p class="text-xs text-gray-500">{{ d.carrier }} · {{ d.status }}{% if d.expected_date %} · ETA {{ d.expected_date }}{% endif %}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="text-sm text-gray-400 text-center py-2">
+      <p>Run the deliveries pipeline to populate package tracking and upcoming events.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Pipeline Controls -->
+<div class="card mt-6">
+  <h3 class="font-semibold text-gray-800 mb-4">Run Pipelines</h3>
+  <div class="flex flex-wrap gap-2">
+    <button onclick="runPipeline('morning-briefing', 'POST', {})" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-colors">☀️ Morning Briefing</button>
+    <button onclick="runPipeline('email-summary')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">📧 Refresh Emails</button>
+    <button onclick="runPipeline('news-summary')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">📰 Refresh News</button>
+    <button onclick="runPipeline('comms-plan', 'POST', {force_refresh: true})" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">🗺️ Build Comms Plan</button>
+    <button onclick="runPipeline('followup', 'POST', {})" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">⏳ Check Follow-ups</button>
+    <button onclick="runPipeline('travel', 'POST', {})" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">✈️ Scan Travel</button>
+    <button onclick="runPipeline('birthdays')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">🎂 Check Birthdays</button>
+    <button onclick="runPipeline('deliveries')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">📦 Deliveries</button>
+    <button onclick="runPipeline('archive-emails', 'POST', {dry_run: false, learn_new_rules: true})" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm rounded-lg transition-colors">🗃️ Archive</button>
+  </div>
+  <div id="pipelineStatus" class="mt-3 text-sm hidden"></div>
+</div>
+
+<!-- Daily Activity Log -->
+{% if data.activity_log %}
+<div class="card mt-6">
+  <h3 class="font-semibold text-gray-800 mb-1">📊 Daily Activity Log</h3>
+  <p class="text-xs text-gray-400 mb-3">Pipeline runs only — email bodies remain in iCloud, never stored in MySQL.</p>
+  <div class="overflow-x-auto">
+    <table class="w-full text-xs">
+      <thead><tr class="text-left text-gray-400 border-b border-gray-100">
+        <th class="pb-2 pr-3">Date</th><th class="pb-2 pr-3">Pipeline</th>
+        <th class="pb-2 pr-3">Emails</th><th class="pb-2 pr-3">Family</th>
+        <th class="pb-2 pr-3">Actions</th><th class="pb-2 pr-3">Follow-ups</th>
+        <th class="pb-2">Status</th>
+      </tr></thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for row in data.activity_log %}
+        <tr class="text-gray-600">
+          <td class="py-1.5 pr-3 font-medium text-gray-700">{{ row.log_date }}</td>
+          <td class="py-1.5 pr-3">{{ row.pipeline }}</td>
+          <td class="py-1.5 pr-3">{{ row.emails_processed or '—' }}</td>
+          <td class="py-1.5 pr-3">{{ row.family_emails_found or '—' }}</td>
+          <td class="py-1.5 pr-3">{{ row.action_items_created or '—' }}</td>
+          <td class="py-1.5 pr-3">{{ row.followups_detected or '—' }}</td>
+          <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium {% if row.status == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">{{ row.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- AssistantAgent Chat -->
+<div class="card mt-6">
+  <h3 class="font-semibold text-gray-800 mb-4">💬 Ask AssistantAgent</h3>
+  <div id="chatHistory" class="max-h-64 overflow-y-auto space-y-3 mb-4 p-3 bg-gray-50 rounded-xl min-h-[80px]">
+    <p class="text-sm text-gray-400 text-center">Ask anything — email, calendar, news, reminders...</p>
+  </div>
+  <div class="flex gap-3">
+    <input id="chatInput" type="text" placeholder="e.g. What should I reply to Kim?" onkeydown="if(event.key==='Enter') sendChat()"
+      class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"/>
+    <button onclick="sendChat()"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+      Send
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function dismissFollowup(id) {
+  fetch('/api/pipeline/followup/dismiss/' + id, {
+    method: 'POST', headers: {'X-API-Key': getApiKey()}
+  });
+  const el = document.getElementById('fu-' + id);
+  if (el) { el.style.opacity = '0'; el.style.transition = 'all 0.3s'; setTimeout(() => el.remove(), 300); }
+}
+</script>
+{% endblock %}

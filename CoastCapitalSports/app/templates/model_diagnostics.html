@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}Model Diagnostics — Coast Capital Sports{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="mb-0"><i class="bi bi-tools me-2"></i>Model Diagnostics</h4>
+        <small class="text-muted">Evaluate model quality — ROC curves, confusion matrices, backtesting, and user-triggered refit</small>
+    </div>
+    <div class="col-auto d-flex gap-2">
+        <select id="diag-sport" class="form-select form-select-sm" style="width:140px">
+            <option value="nfl">NFL</option>
+            <option value="ncaa_mbb">NCAA MBB</option>
+            <option value="mlb">MLB</option>
+        </select>
+        <select id="diag-target" class="form-select form-select-sm" style="width:160px">
+            <option value="home_win">home_win</option>
+            <option value="cover_home">cover_home</option>
+            <option value="total_over">total_over</option>
+        </select>
+        <button class="btn btn-sm btn-outline-info" onclick="loadDiagnostics()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Load
+        </button>
+    </div>
+</div>
+
+<!-- Recommendation Banner -->
+<div id="recommendation" class="mb-4" style="display:none"></div>
+
+<!-- Model Comparison Table -->
+<div class="section-title"><i class="bi bi-list-columns me-1"></i>Model Registry</div>
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table class="table table-dark table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>CV Accuracy</th>
+                    <th>CV AUC</th>
+                    <th>CV Loss</th>
+                    <th>Hidden</th>
+                    <th>LR</th>
+                    <th>Dropout</th>
+                    <th>Epochs</th>
+                    <th>Trained</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="registry-body">
+                <tr><td colspan="11" class="text-center text-muted">Select sport &amp; target, then click Load</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">ROC Curve</div>
+            <div class="card-body chart-container" style="height:380px">
+                <canvas id="roc-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Confusion Matrix <small class="text-muted">(threshold = 0.5)</small></div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center" id="cm-container" style="min-height:300px">
+                <p class="text-muted">Load a model to see the confusion matrix</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Year Breakdown -->
+<div class="section-title"><i class="bi bi-calendar3 me-1"></i>Performance by Year</div>
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table class="table table-dark table-sm table-hover mb-0">
+            <thead>
+                <tr><th>Year</th><th>Games</th><th>Accuracy</th><th>AUC</th></tr>
+            </thead>
+            <tbody id="year-body">
+                <tr><td colspan="4" class="text-center text-muted">—</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- Historical Backtest Section                                        -->
+<!-- ================================================================== -->
+
+<div class="section-title"><i class="bi bi-clock-history me-1"></i>Historical Backtest</div>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Backtest — Simulated Betting Performance</span>
+        <div class="d-flex gap-2 align-items-center">
+            <select id="bt-months" class="form-select form-select-sm" style="width:130px">
+                <option value="6">6 months</option>
+                <option value="12">12 months</option>
+                <option value="24" selected>24 months</option>
+                <option value="36">36 months</option>
+            </select>
+            <button class="btn btn-sm btn-outline-info" id="btn-run-backtest" onclick="runBacktest()">
+                <i class="bi bi-play-fill me-1"></i>Run Backtest
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Backtest Summary Cards -->
+        <div id="bt-summary" class="row g-3 mb-4" style="display:none">
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">Total Bets</div>
+                    <div class="fw-bold text-info" id="bt-total-bets">—</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">Win Rate</div>
+                    <div class="fw-bold text-info" id="bt-accuracy">—</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">AUC</div>
+                    <div class="fw-bold text-info" id="bt-auc">—</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">Total ROI</div>
+                    <div class="fw-bold" id="bt-roi">—</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">Total P/L</div>
+                    <div class="fw-bold" id="bt-pnl">—</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card bg-dark border-secondary text-center p-2">
+                    <div class="small text-muted">Max Drawdown</div>
+                    <div class="fw-bold text-danger" id="bt-drawdown">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backtest Charts -->
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div style="height:320px; position:relative">
+                    <canvas id="bt-pnl-chart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="height:320px; position:relative">
+                    <canvas id="bt-roi-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading/empty state -->
+        <div id="bt-placeholder" class="text-center py-4 text-muted">
+            <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+            Select sport &amp; target above, then click <strong>Run Backtest</strong> to simulate
+            historical betting performance ($100/week bankroll, Quarter-Kelly allocation).
+        </div>
+    </div>
+</div>
+
+<!-- CV vs Backtest Comparison -->
+<div class="section-title"><i class="bi bi-arrow-left-right me-1"></i>CV vs Backtest Comparison</div>
+<div class="card mb-4">
+    <div class="card-body table-responsive">
+        <table class="table table-dark table-sm table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Cross-Validation</th>
+                    <th>Backtest (Historical)</th>
+                    <th>Delta</th>
+                </tr>
+            </thead>
+            <tbody id="cv-bt-comparison-body">
+                <tr><td colspan="4" class="text-center text-muted">Run backtest and load diagnostics to compare</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- User-Triggered Refit Section                                       -->
+<!-- ================================================================== -->
+
+<div class="section-title"><i class="bi bi-arrow-repeat me-1"></i>Refit Model</div>
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Retrain &amp; Evaluate — User-Triggered Model Refit</span>
+        <button class="btn btn-sm btn-outline-warning" id="btn-refit" onclick="startRefit()">
+            <i class="bi bi-arrow-repeat me-1"></i>Refit Model
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="refit-placeholder" class="text-center py-3 text-muted">
+            Click <strong>Refit Model</strong> to retrain and cross-validate a new candidate model.
+            After refitting, compare the candidate against the production model, then decide to promote or discard.
+        </div>
+
+        <!-- Refit Progress -->
+        <div id="refit-progress" class="mb-3" style="display:none">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                <span id="refit-status-text" class="text-warning">Refitting model...</span>
+            </div>
+            <div class="progress" style="height:6px">
+                <div id="refit-progress-bar" class="progress-bar bg-warning" role="progressbar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <!-- Refit Result (shown after refit completes) -->
+        <div id="refit-result" style="display:none">
+            <div class="section-title small mt-2"><i class="bi bi-clipboard-data me-1"></i>Candidate vs Production</div>
+            <div class="table-responsive mb-3">
+                <table class="table table-dark table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Production</th>
+                            <th>Candidate (New)</th>
+                            <th>Delta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="refit-comparison-body"></tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-sm btn-outline-secondary" onclick="discardCandidate()">
+                    <i class="bi bi-x-circle me-1"></i>Discard Candidate
+                </button>
+                <button class="btn btn-sm btn-success" id="btn-promote-candidate" onclick="promptPromote()">
+                    <i class="bi bi-rocket me-1"></i>Promote to Production
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Promote Modal -->
+<div class="modal fade" id="promoteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Confirm Promotion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="promote-body">
+                <p>Are you sure you want to push the candidate model to production?</p>
+                <div id="promote-metrics-summary" class="mb-3"></div>
+                <div class="alert alert-warning small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    This will retire the current production model. The candidate will immediately
+                    be used for all scoring and betting recommendations.
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-success" id="confirm-promote-btn" onclick="confirmPromote()">
+                    <i class="bi bi-rocket me-1"></i>Promote
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/model_diagnostics.js"></script>
+{% endblock %}

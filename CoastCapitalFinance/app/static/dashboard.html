@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceAgent — Market Dashboard</title>
+  <link rel="icon" href="/static/brand/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/brand/css/brand.css">
+  <link rel="stylesheet" href="/static/brand/css/nav.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+<body data-cc-module="finance" data-cc-page="dashboard">
+
+  <!-- ══════════════════════════ FINANCE NAV BAR ══════════════════════════ -->
+  <div class="finance-nav" style="display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-weight:700;font-size:0.95rem;color:#3b82f6;letter-spacing:-0.02em;">Coast Capital</span>
+      <span style="color:rgba(255,255,255,0.2);">|</span>
+      <span style="font-weight:500;color:rgba(255,255,255,0.55);">Finance</span>
+    </div>
+    <div style="display:flex;gap:4px;">
+      <a href="/dashboard" style="padding:6px 14px;border-radius:4px;color:#3b82f6;background:rgba(59,130,246,0.15);text-decoration:none;font-weight:500;font-size:0.82rem;">Dashboard</a>
+      <a href="/models" style="padding:6px 14px;border-radius:4px;color:rgba(255,255,255,0.55);text-decoration:none;font-weight:500;font-size:0.82rem;">Models</a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ FINANCE TOOLBAR ══════════════════════════ -->
+  <div class="finance-toolbar" style="display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.82rem;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="market-status-badge" id="marketStatusBadge" style="display:flex;align-items:center;gap:6px;">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="marketStatusText">Checking…</span>
+      </div>
+      <span class="header-date" id="headerDate" style="color:rgba(255,255,255,0.5);"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="last-update" id="lastUpdate" style="color:rgba(255,255,255,0.4);font-size:0.78rem;">Updating…</span>
+      <button class="btn-refresh" id="btnRefresh" title="Refresh data" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      </button>
+      <button class="btn-settings" id="btnSettings" title="Configure watchlist" style="background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;padding:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 19.07l-1.41 1.41M20 12h-2M6 12H4M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M12 4V2M12 22v-2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ TICKER TAPE ═══════════════════════════════ -->
+  <div class="ticker-tape-wrapper">
+    <div class="ticker-tape" id="tickerTape">
+      <div class="ticker-inner" id="tickerInner">
+        <span class="ticker-loading">Loading market data…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ OVERVIEW BAR ══════════════════════════════ -->
+  <div class="overview-bar" id="overviewBar">
+    <div class="overview-loading">
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+      <div class="skeleton" style="width:80px;height:38px"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ MARKET HIGHLIGHTS ════════════════════════ -->
+  <div class="highlights-bar" id="highlightsBar">
+    <div class="highlights-inner">
+      <!-- Indices -->
+      <div class="hl-group" id="hlIndices">
+        <div class="hl-group-label">Major Indices</div>
+        <div class="hl-cards" id="hlIndicesCards">
+          <div class="skeleton" style="width:140px;height:56px"></div>
+          <div class="skeleton" style="width:140px;height:56px"></div>
+          <div class="skeleton" style="width:140px;height:56px"></div>
+        </div>
+      </div>
+      <!-- % Movers -->
+      <div class="hl-group" id="hlPctMovers">
+        <div class="hl-group-label">Top % Movers</div>
+        <div class="hl-cards" id="hlPctCards">
+          <div class="skeleton" style="width:120px;height:56px"></div>
+          <div class="skeleton" style="width:120px;height:56px"></div>
+        </div>
+      </div>
+      <!-- Market Cap Movers -->
+      <div class="hl-group" id="hlMcapMovers">
+        <div class="hl-group-label">Market Cap Movers</div>
+        <div class="hl-cards" id="hlMcapCards">
+          <div class="skeleton" style="width:140px;height:56px"></div>
+          <div class="skeleton" style="width:140px;height:56px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ MAIN LAYOUT ══════════════════════════════ -->
+  <main class="dashboard-layout">
+
+    <!-- ── LEFT: Fortune 500 Movers ─────────────────────────────────────── -->
+    <aside class="panel panel-left">
+
+      <!-- Big Noise Alerts -->
+      <div class="panel-section" id="bigNoiseSection">
+        <div class="section-header">
+          <span class="section-icon flash-icon">⚡</span>
+          <h2 class="section-title">Big Noise</h2>
+          <span class="section-subtitle">Unusual activity</span>
+        </div>
+        <div class="big-noise-list" id="bigNoiseList">
+          <div class="panel-loading">
+            <div class="skeleton" style="height:54px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:54px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:54px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gainers -->
+      <div class="panel-section">
+        <div class="section-header">
+          <span class="section-icon" style="color:var(--green)">▲</span>
+          <h2 class="section-title">Top Gainers</h2>
+          <span class="section-subtitle">Fortune 500</span>
+        </div>
+        <div class="mover-list" id="gainersList">
+          <div class="panel-loading">
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Losers -->
+      <div class="panel-section">
+        <div class="section-header">
+          <span class="section-icon" style="color:var(--red)">▼</span>
+          <h2 class="section-title">Top Losers</h2>
+          <span class="section-subtitle">Fortune 500</span>
+        </div>
+        <div class="mover-list" id="losersList">
+          <div class="panel-loading">
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px;margin-bottom:4px"></div>
+            <div class="skeleton" style="height:40px"></div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ── CENTER: Watchlist Cards ──────────────────────────────────────── -->
+    <section class="panel panel-center">
+      <div class="section-header sticky-header">
+        <span class="section-icon" style="color:var(--accent)">◈</span>
+        <h2 class="section-title">Watchlist</h2>
+        <span class="section-subtitle" id="watchlistCount"></span>
+        <button class="btn-icon btn-add-ticker" id="btnAddTicker" title="Add ticker">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="watchlist-grid" id="watchlistGrid">
+        <div class="panel-loading">
+          <div class="skeleton card-skeleton"></div>
+          <div class="skeleton card-skeleton"></div>
+          <div class="skeleton card-skeleton"></div>
+          <div class="skeleton card-skeleton"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RIGHT: Headlines Feed ────────────────────────────────────────── -->
+    <aside class="panel panel-right">
+      <div class="section-header sticky-header">
+        <span class="section-icon" style="color:var(--gold)">◉</span>
+        <h2 class="section-title">Headlines</h2>
+        <div class="headline-ticker-tabs" id="headlineTabs"></div>
+      </div>
+      <div class="headlines-feed" id="headlinesFeed">
+        <div class="panel-loading">
+          <div class="skeleton" style="height:80px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:80px;margin-bottom:8px"></div>
+          <div class="skeleton" style="height:80px;margin-bottom:8px"></div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ════════════════════════ SETTINGS MODAL ══════════════════════════════ -->
+  <div class="modal-backdrop" id="settingsModal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Configure Watchlist</h3>
+        <button class="btn-close" id="btnCloseSettings">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">Add or remove tickers. Changes are saved automatically.</p>
+        <div class="add-ticker-row">
+          <input type="text" id="newTickerInput" placeholder="e.g. AAPL, BTC-USD, GLD"
+                 class="ticker-input" maxlength="20" />
+          <button class="btn-primary" id="btnConfirmAdd">Add</button>
+        </div>
+        <div class="current-tickers" id="currentTickers"></div>
+        <div class="modal-actions">
+          <button class="btn-ghost" id="btnResetWatchlist">Reset to defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ REFRESH COUNTDOWN ════════════════════════════ -->
+  <div class="refresh-bar" id="refreshBar">
+    <div class="refresh-progress" id="refreshProgress"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+  <script src="/static/brand/js/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+{
+  "name": "MySQL Database Maintenance",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "nightly-trigger",
+      "name": "Nightly Schedule (2 AM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 */6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "health-trigger",
+      "name": "Health Check (Every 6h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 480]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "weekly-trigger",
+      "name": "Weekly Full Maintenance (Mon 8 AM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 660]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "analyze"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "analyze-tables",
+      "name": "Analyze Tables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [520, 240],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "optimize"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "optimize-tables",
+      "name": "Optimize Tables",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [760, 240],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "slow_queries"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "capture-slow-queries",
+      "name": "Capture Slow Queries",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1000, 240],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/recommendations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-recommendations",
+      "name": "Get Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1240, 240],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-recommendations",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-recommendations",
+      "name": "Has Recommendations?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1480, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "health"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "health-capture",
+      "name": "Health Snapshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [520, 480],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/health-snapshot",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "read-health-snapshot",
+      "name": "Read Health Snapshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [760, 480],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "full"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "full-maintenance",
+      "name": "Full Maintenance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [520, 660],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "job_type",
+              "value": "flush"
+            },
+            {
+              "name": "schema_name",
+              "value": "coastcapital"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "flush-counters",
+      "name": "Flush Status Counters",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [760, 660],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "maintenance-api-key",
+          "name": "Maintenance API Key"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Nightly Schedule (2 AM)": {
+      "main": [
+        [
+          { "node": "Analyze Tables", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Analyze Tables": {
+      "main": [
+        [
+          { "node": "Optimize Tables", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Optimize Tables": {
+      "main": [
+        [
+          { "node": "Capture Slow Queries", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Capture Slow Queries": {
+      "main": [
+        [
+          { "node": "Get Recommendations", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Recommendations": {
+      "main": [
+        [
+          { "node": "Has Recommendations?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Health Check (Every 6h)": {
+      "main": [
+        [
+          { "node": "Health Snapshot", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Health Snapshot": {
+      "main": [
+        [
+          { "node": "Read Health Snapshot", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Weekly Full Maintenance (Mon 8 AM)": {
+      "main": [
+        [
+          { "node": "Full Maintenance", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Full Maintenance": {
+      "main": [
+        [
+          { "node": "Flush Status Counters", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["mysql", "maintenance", "database", "coastcapital"],
+  "triggerCount": 3,
+  "updatedAt": "2026-03-07T00:00:00.000Z",
+  "versionId": "1"
+}

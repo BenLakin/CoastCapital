@@ -1,0 +1,104 @@
+version: "3.9"
+
+services:
+  homelab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coastcapital-homelab
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      # Flask
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
+      API_KEY: ${API_KEY}
+      FLASK_DEBUG: ${FLASK_DEBUG:-false}
+      # MySQL (connects to existing coastcapital-mysql container)
+      MYSQL_HOST: ${MYSQL_HOST:-coastcapital-mysql}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_USER: ${MYSQL_USER:-dbadmin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-homelab_silver}
+      # Anthropic Claude
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-4-6}
+      # Local Mac (Docker host) — SSH via host.docker.internal
+      MONITOR_LOCAL: ${MONITOR_LOCAL:-true}
+      LOCAL_HOST: ${LOCAL_HOST:-host.docker.internal}
+      LOCAL_USER: ${LOCAL_USER}                          # Mac username — required
+      LOCAL_SSH_KEY: ${LOCAL_SSH_KEY:-/run/secrets/ssh_key}
+      LOCAL_SSH_PASSWORD: ${LOCAL_SSH_PASSWORD:-}
+      LOCAL_MACHINE_NAME: ${LOCAL_MACHINE_NAME:-Mac}
+      LOCAL_MACHINE_DESC: ${LOCAL_MACHINE_DESC:-Docker Host · macOS}
+      # Remote Ubuntu Server (SSH)
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_USER: ${SERVER_USER:-ubuntu}
+      SERVER_SSH_KEY: ${SERVER_SSH_KEY:-/run/secrets/ssh_key}
+      SERVER_SSH_PASSWORD: ${SERVER_SSH_PASSWORD:-}
+      SERVER_NAME: ${SERVER_NAME:-Ubuntu Server}
+      SERVER_DESC: ${SERVER_DESC:-GPU Server · Ubuntu}
+      # UniFi
+      UNIFI_HOST: ${UNIFI_HOST}
+      UNIFI_USERNAME: ${UNIFI_USERNAME}
+      UNIFI_PASSWORD: ${UNIFI_PASSWORD}
+      UNIFI_SITE: ${UNIFI_SITE:-default}
+      UNIFI_PORT: ${UNIFI_PORT:-443}
+      # Plex
+      PLEX_URL: ${PLEX_URL}
+      PLEX_TOKEN: ${PLEX_TOKEN}
+      # Home Assistant
+      HA_URL: ${HA_URL}
+      HA_TOKEN: ${HA_TOKEN}
+      # Ollama
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # CoreDNS — local DNS server
+      DNS_HOSTS_FILE: /app/dns/custom.hosts
+      DNS_HEALTH_URL: http://homelab-dns:8080/health
+      DNS_UPSTREAM: "1.1.1.1, 8.8.8.8"
+      # Portainer
+      PORTAINER_URL: ${PORTAINER_URL}
+      PORTAINER_USERNAME: ${PORTAINER_USERNAME}
+      PORTAINER_PASSWORD: ${PORTAINER_PASSWORD}
+      # Homepage
+      HOMEPAGE_URL: ${HOMEPAGE_URL:-}
+      # Timezone
+      TZ: ${TIMEZONE:-America/New_York}
+    ports:
+      - "5200:5000"
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+      - ./dns:/app/dns                                      # shared hosts file with coredns
+      - ${SSH_KEY_PATH:-~/.ssh/id_rsa}:/run/secrets/ssh_key:ro
+      - ../CoastCapitalBrand:/app/app/static/brand:ro
+    networks:
+      - homelab-net
+      - db-external
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  coredns:
+    image: coredns/coredns:latest
+    container_name: homelab-dns
+    restart: unless-stopped
+    command: -conf /etc/coredns/Corefile
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - ./dns/Corefile:/etc/coredns/Corefile:ro
+      - ./dns/custom.hosts:/etc/coredns/custom.hosts
+    networks:
+      - homelab-net
+
+networks:
+  homelab-net:
+    driver: bridge
+  db-external:
+    external: true
+    name: coastcapitaldatabase_db-network

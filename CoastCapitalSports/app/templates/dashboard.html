@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Sports Summary — Coast Capital Sports{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h4 class="mb-0"><i class="bi bi-activity me-2"></i>Sports Summary Dashboard</h4>
+        <small class="text-muted">Recent scores and news for your focus teams</small>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4" id="quick-stats">
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="stat-label">NFL Games</div>
+            <div class="stat-value text-info" id="stat-nfl">—</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="stat-label">NCAA MBB Games</div>
+            <div class="stat-value text-info" id="stat-ncaa_mbb">—</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <div class="stat-label">MLB Games</div>
+            <div class="stat-value text-info" id="stat-mlb">—</div>
+        </div>
+    </div>
+</div>
+
+<!-- Betting Recommendations -->
+<div class="section-title"><i class="bi bi-cash-coin me-1"></i>Recommended Bets — This Week</div>
+<div class="row g-3 mb-2" id="betting-summary">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Bankroll</div>
+            <div class="stat-value text-success" id="bet-bankroll">$50.00</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Total Wagered</div>
+            <div class="stat-value text-warning" id="bet-wagered">—</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Bets Placed</div>
+            <div class="stat-value text-info" id="bet-count">—</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="stat-label">Max Per Game</div>
+            <div class="stat-value text-secondary" id="bet-max">$25.00</div>
+        </div>
+    </div>
+</div>
+<div class="row g-3 mb-4" id="betting-cards">
+    <div class="col-12 spinner-wrapper" id="betting-spinner">
+        <div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+</div>
+
+<!-- Weekly Betting Plan (saved from weekly optimization) -->
+<div class="section-title"><i class="bi bi-calendar-week me-1"></i>Saved Weekly Plan</div>
+<div class="row g-3 mb-4" id="weekly-plan-container">
+    <!-- Populated by dashboard.js loadWeeklyPlan() -->
+</div>
+
+<!-- Focus Teams -->
+<div class="section-title"><i class="bi bi-star me-1"></i>Focus Teams — Recent Games</div>
+<div class="row g-3 mb-4" id="focus-teams">
+    <div class="col-12 spinner-wrapper" id="focus-spinner">
+        <div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+</div>
+
+<!-- News -->
+<div class="section-title"><i class="bi bi-newspaper me-1"></i>Latest Sports News</div>
+<div class="row g-3 mb-4" id="news-container">
+    <div class="col-12 spinner-wrapper" id="news-spinner">
+        <div class="spinner-border text-info" role="status"><span class="visually-hidden">Loading…</span></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}
