@@ -64,7 +64,8 @@
       "WebSearch",
       "Bash(docker restart:*)",
       "Bash(docker ps:*)",
-      "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalN8N/fix-n8n-migrations.sh)"
+      "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalN8N/fix-n8n-migrations.sh)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

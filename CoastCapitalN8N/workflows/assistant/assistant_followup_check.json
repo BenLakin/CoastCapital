@@ -64,7 +64,7 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         470,
         300
@@ -78,7 +78,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -161,7 +161,7 @@
       "id": "node-slack-alert",
       "name": "Slack - Followup Alert",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1350,
         200
@@ -175,7 +175,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -219,7 +219,7 @@
       ],
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }

@@ -44,7 +44,7 @@
       "id": "node-slack-started",
       "name": "Slack - Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         470,
         300
@@ -58,7 +58,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -275,7 +275,7 @@
       "id": "node-slack-success",
       "name": "Slack - All Success",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         2720,
         200
@@ -289,7 +289,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -298,7 +298,7 @@
       "id": "node-slack-failure",
       "name": "Slack - Partial Failure",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         2720,
         400
@@ -312,7 +312,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }

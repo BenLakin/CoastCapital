@@ -64,7 +64,7 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         470,
         300
@@ -78,7 +78,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -151,7 +151,7 @@
       "id": "node-slack-summary",
       "name": "Slack - Full Status Summary",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1350,
         200
@@ -165,7 +165,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -174,7 +174,7 @@
       "id": "node-slack-error",
       "name": "Slack - Sweep Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1130,
         400
@@ -188,7 +188,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }

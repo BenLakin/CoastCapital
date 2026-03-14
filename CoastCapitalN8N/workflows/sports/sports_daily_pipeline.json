@@ -65,7 +65,7 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         470,
         200
@@ -79,7 +79,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -171,7 +171,7 @@
       "id": "node-slack-success",
       "name": "Slack - Daily Summary",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1350,
         100
@@ -185,7 +185,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -194,7 +194,7 @@
       "id": "node-slack-error",
       "name": "Slack - Pipeline Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1130,
         350
@@ -208,7 +208,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }

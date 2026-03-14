@@ -57,7 +57,7 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         470,
         300
@@ -71,7 +71,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -256,7 +256,7 @@
       "id": "node-slack-promote-warning",
       "name": "Slack - Promotion Warning",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         2010,
         350
@@ -270,7 +270,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -308,7 +308,7 @@
       "id": "node-slack-success",
       "name": "Slack - Tournament Prep Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         2450,
         200
@@ -322,7 +322,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -331,7 +331,7 @@
       "id": "node-slack-backfill-failed",
       "name": "Slack - Backfill Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1130,
         450
@@ -345,7 +345,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -374,7 +374,7 @@
       "id": "node-slack-materialize-failed",
       "name": "Slack - Materialize Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1350,
         450
@@ -388,7 +388,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -417,7 +417,7 @@
       "id": "node-slack-train-failed",
       "name": "Slack - Train Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         1570,
         550
@@ -431,7 +431,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
@@ -460,7 +460,7 @@
       "id": "node-slack-simulate-failed",
       "name": "Slack - Simulate Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.1,
+      "typeVersion": 2.2,
       "position": [
         2450,
         450
@@ -474,7 +474,7 @@
       },
       "credentials": {
         "slackApi": {
-          "id": "cred-slack",
+          "id": "SOJFNoa56040Xc8Q",
           "name": "Slack account"
         }
       }
