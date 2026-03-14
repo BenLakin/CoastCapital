@@ -63,7 +63,8 @@
       "Bash(grep -n '^  [A-Z]' /Volumes/CoastTechnology/CoastCapital/*/docker-compose.yml)",
       "WebSearch",
       "Bash(docker restart:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalN8N/fix-n8n-migrations.sh)"
     ]
   }
 }
