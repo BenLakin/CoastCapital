@@ -1,5 +1,5 @@
 """
-News Pipeline — RSS + NewsAPI aggregator with Claude summaries.
+News Pipeline — RSS aggregator with Claude summaries.
 Categories: world, technology, ai, b2b
 """
 import logging
@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 
 import anthropic
 import feedparser
-import requests
 
 from app.config import Config
 from app.db import get_conn, log_daily_activity
@@ -33,13 +32,6 @@ RSS_FEEDS = {
         "https://hbr.org/resources/rss/topics/sales/feed",
         "https://feeds.feedburner.com/entrepreneur/latest",
     ],
-}
-
-NEWSAPI_TOPICS = {
-    "world": "world news",
-    "technology": "technology",
-    "ai": "artificial intelligence AI machine learning",
-    "b2b": "B2B business enterprise SaaS",
 }
 
 
@@ -73,47 +65,7 @@ class NewsPipeline:
     # ── Private ───────────────────────────────────────────────────────────────
 
     def _fetch_category(self, category: str) -> list[dict]:
-        articles = []
-
-        # Try NewsAPI first (more reliable, requires key)
-        if Config.NEWS_API_KEY:
-            articles = self._fetch_newsapi(category)
-
-        # Fall back to RSS
-        if not articles:
-            articles = self._fetch_rss(category)
-
-        return articles[:15]  # cap per category
-
-    def _fetch_newsapi(self, category: str) -> list[dict]:
-        query = NEWSAPI_TOPICS.get(category, category)
-        try:
-            resp = requests.get(
-                "https://newsapi.org/v2/everything",
-                params={
-                    "q": query,
-                    "language": "en",
-                    "sortBy": "publishedAt",
-                    "pageSize": 10,
-                    "from": (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d"),
-                    "apiKey": Config.NEWS_API_KEY,
-                },
-                timeout=10,
-            )
-            data = resp.json()
-            articles = []
-            for art in data.get("articles", []):
-                articles.append({
-                    "title": art.get("title", ""),
-                    "source": art.get("source", {}).get("name", ""),
-                    "url": art.get("url", ""),
-                    "description": art.get("description", "") or "",
-                    "content": (art.get("content", "") or "")[:500],
-                })
-            return articles
-        except Exception as e:
-            logger.warning("NewsAPI error for %s: %s", category, e)
-            return []
+        return self._fetch_rss(category)[:15]
 
     def _fetch_rss(self, category: str) -> list[dict]:
         feeds = RSS_FEEDS.get(category, [])

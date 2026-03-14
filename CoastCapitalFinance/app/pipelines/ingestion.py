@@ -2,10 +2,7 @@
 Stock data ingestion pipeline.
 
 Data Sources:
-  - yfinance  : Primary OHLCV, splits, earnings, stock info (free, reliable)
-  - NewsAPI   : News articles (100 req/day free)
-  - Alpha Vantage: Supplemental fundamentals (25 req/day free)
-  - FRED      : Macro indicators (Fed, Treasury yields, free)
+  - yfinance  : OHLCV, splits, earnings, stock info, news, macro indicators (free)
 """
 import time
 import json
@@ -29,9 +26,6 @@ from app.utils.llm_utils import analyze_news_article, analyze_earnings_report
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 logger = get_logger(__name__)
-
-FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = settings.FRED_API_KEY  # Set FRED_API_KEY in .env (free at fred.stlouisfed.org)
 
 
 # ---------------------------------------------------------------------------
@@ -347,7 +341,7 @@ def fetch_and_store_news(
       - Max LLM_MAX_ARTICLES_PER_STOCK (default 3) articles per stock per day
       - Uses parameterized provider (Gemini for watchlist, Ollama for big movers)
 
-    Sources: yfinance news feed, NewsAPI (if configured)
+    Source: yfinance news feed
     """
     from app.utils.llm_utils import get_provider_for_ticker, is_provider_available
 
@@ -423,111 +417,10 @@ def fetch_and_store_news(
         db.add(news_record)
         articles_stored += 1
 
-    # Source 2: NewsAPI
-    if settings.NEWS_API_KEY:
-        remaining_llm = max_llm_articles - llm_analyzed_count
-        articles_stored += _fetch_newsapi(
-            ticker, company_name, stock.stock_id, days_back, cutoff, db,
-            use_llm=provider_ready, llm_provider=llm_provider,
-            max_llm_articles=remaining_llm,
-        )
-
     db.flush()
     logger.info("News stored", ticker=ticker, articles=articles_stored)
     return articles_stored
 
-
-def _fetch_newsapi(
-    ticker: str,
-    company_name: str,
-    stock_id: int,
-    days_back: int,
-    cutoff: datetime,
-    db: Session,
-    use_llm: bool,
-    llm_provider: str = None,
-    max_llm_articles: int = 3,
-) -> int:
-    """Fetch articles from NewsAPI with parameterized LLM provider and article cap."""
-    from_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
-    url = (
-        f"https://newsapi.org/v2/everything"
-        f"?q={ticker}+OR+\"{company_name}\""
-        f"&from={from_date}"
-        f"&sortBy=publishedAt"
-        f"&pageSize=20"
-        f"&apiKey={settings.NEWS_API_KEY}"
-    )
-
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        logger.warning("NewsAPI fetch failed", ticker=ticker, error=str(e))
-        return 0
-
-    count = 0
-    llm_count = 0
-    for article in data.get("articles", []):
-        published_str = article.get("publishedAt", "")
-        try:
-            published_at = datetime.fromisoformat(published_str.replace("Z", "+00:00"))
-        except Exception:
-            published_at = datetime.now(timezone.utc)
-
-        if published_at < cutoff:
-            continue
-
-        headline = article.get("title", "")[:999]
-        full_text = (article.get("content") or article.get("description") or "")[:5000]
-
-        exists = db.query(FactStockNews).filter(
-            FactStockNews.stock_id == stock_id,
-            FactStockNews.headline == headline,
-        ).first()
-        if exists:
-            continue
-
-        llm_data = {}
-        if use_llm and full_text and llm_count < max_llm_articles:
-            try:
-                llm_data = analyze_news_article(
-                    ticker=ticker,
-                    company_name=company_name,
-                    headline=headline,
-                    article_text=full_text,
-                    provider=llm_provider,
-                )
-                llm_count += 1
-            except Exception as e:
-                logger.warning("LLM analysis failed", ticker=ticker,
-                               provider=llm_provider, error=str(e))
-
-        record = FactStockNews(
-            stock_id=stock_id,
-            ticker=ticker,
-            headline=headline,
-            source=(article.get("source", {}).get("name") or "")[:199],
-            url=(article.get("url") or "")[:1999],
-            published_at=published_at,
-            author=(article.get("author") or "")[:199],
-            full_text=full_text,
-            llm_summary=llm_data.get("summary"),
-            llm_key_points=llm_data.get("key_points"),
-            llm_catalysts=llm_data.get("price_catalysts"),
-            llm_risks=llm_data.get("price_risks"),
-            sentiment_score=llm_data.get("sentiment_score"),
-            sentiment_label=llm_data.get("sentiment_label"),
-            relevance_score=llm_data.get("relevance_score"),
-            llm_model=llm_data.get("llm_model"),
-            llm_processed_at=datetime.fromisoformat(llm_data["llm_processed_at"]) if llm_data.get("llm_processed_at") else None,
-            data_source="newsapi",
-        )
-        db.add(record)
-        count += 1
-
-    return count
 
 
 # ---------------------------------------------------------------------------

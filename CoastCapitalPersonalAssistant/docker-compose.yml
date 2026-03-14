@@ -26,8 +26,6 @@ services:
       # Anthropic Claude
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-4-6}
-      # News API (optional – falls back to RSS feeds if not set)
-      NEWS_API_KEY: ${NEWS_API_KEY:-}
       # Owner / Family
       OWNER_NAME: ${OWNER_NAME:-Owner}
       KIM_LAKIN_EMAIL: ${KIM_LAKIN_EMAIL:-}

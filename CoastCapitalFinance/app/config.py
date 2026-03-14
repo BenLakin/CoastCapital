@@ -27,14 +27,10 @@ class Settings(BaseSettings):
 
     # APIs
     ANTHROPIC_API_KEY: Optional[str] = None
-    ALPHA_VANTAGE_API_KEY: Optional[str] = None
-    NEWS_API_KEY: Optional[str] = None
-    POLYGON_API_KEY: Optional[str] = None
-    FRED_API_KEY: Optional[str] = None
 
     # LLM Providers — parameterized per use case
     # Primary: stocks of interest (watchlist) — "anthropic", "gemini", "ollama"
-    LLM_PROVIDER_PRIMARY: str = "gemini"
+    LLM_PROVIDER_PRIMARY: str = "ollama"
     # Secondary: other stocks (big movers only) — "anthropic", "gemini", "ollama"
     LLM_PROVIDER_SECONDARY: str = "ollama"
 

@@ -32,9 +32,6 @@ class Config:
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
     CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-opus-4-6")
 
-    # ── News ──────────────────────────────────────────────────────────────────
-    NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
-
     # ── Owner & Family Contacts ───────────────────────────────────────────────
     OWNER_NAME = os.environ.get("OWNER_NAME", "Owner")
     OWNER_CITY = os.environ.get("OWNER_CITY", "")
