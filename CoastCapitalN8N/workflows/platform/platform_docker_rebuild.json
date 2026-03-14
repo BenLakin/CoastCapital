@@ -59,7 +59,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -290,7 +290,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -313,7 +313,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -336,6 +336,17 @@
           "timeout": 10000
         }
       }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
     }
   ],
   "connections": {
@@ -536,6 +547,17 @@
         [
           {
             "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack - Job Started",
             "type": "main",
             "index": 0
           }

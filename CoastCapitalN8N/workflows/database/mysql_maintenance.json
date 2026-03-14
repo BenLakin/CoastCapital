@@ -99,7 +99,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -122,7 +122,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -145,7 +145,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -168,7 +168,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -362,7 +362,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -378,14 +378,14 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
+        "channel": "#coast-jobs-fyi",
         "text": "=[Database] Nightly maintenance completed successfully. No recommendations.",
         "otherOptions": {}
       },
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -470,7 +470,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -563,14 +563,14 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
+        "channel": "#coast-jobs-fyi",
         "text": "=[Database] Weekly full maintenance and status flush completed at {{ $now.toISO() }}.",
         "otherOptions": {}
       },
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -594,6 +594,17 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        100
+      ]
     }
   ],
   "connections": {
@@ -790,6 +801,17 @@
         [
           {
             "node": "Slack - Weekly Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started - Nightly",
             "type": "main",
             "index": 0
           }

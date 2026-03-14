@@ -3,10 +3,18 @@
   "name": "Sports - News Ingest & Summarize",
   "active": true,
   "versionId": "1",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "7", "name": "sports" },
-    { "id": "11", "name": "news" }
+    {
+      "id": "7",
+      "name": "sports"
+    },
+    {
+      "id": "11",
+      "name": "news"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,10 +29,18 @@
       "name": "Every 6 Hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "0 0,6,12,18 * * *" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0,6,12,18 * * *"
+            }
+          ]
         }
       }
     },
@@ -33,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "sports-news-ingest-webhook",
       "parameters": {
         "path": "/webhook/sports-news-ingest",
@@ -47,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 100],
+      "position": [
+        470,
+        100
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -56,7 +78,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     },
     {
@@ -64,7 +89,10 @@
       "name": "POST /ingest-news (NFL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 200],
+      "position": [
+        690,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/ingest-news",
@@ -73,10 +101,15 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{\"sport\": \"nfl\", \"summarize\": true}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+        "httpHeaderAuth": {
+          "id": "cred-sports-webhook",
+          "name": "Sports Webhook Auth"
+        }
       }
     },
     {
@@ -84,7 +117,10 @@
       "name": "POST /ingest-news (NCAA)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 350],
+      "position": [
+        690,
+        350
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/ingest-news",
@@ -93,10 +129,15 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{\"sport\": \"ncaa_mbb\", \"summarize\": true}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+        "httpHeaderAuth": {
+          "id": "cred-sports-webhook",
+          "name": "Sports Webhook Auth"
+        }
       }
     },
     {
@@ -104,7 +145,10 @@
       "name": "POST /ingest-news (MLB)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 500],
+      "position": [
+        690,
+        500
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/ingest-news",
@@ -113,10 +157,15 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{\"sport\": \"mlb\", \"summarize\": true}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+        "httpHeaderAuth": {
+          "id": "cred-sports-webhook",
+          "name": "Sports Webhook Auth"
+        }
       }
     },
     {
@@ -124,7 +173,10 @@
       "name": "Aggregate Results",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [910, 350],
+      "position": [
+        910,
+        350
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -145,37 +197,145 @@
       "name": "Done",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1130, 350],
+      "position": [
+        1130,
+        350
+      ],
       "parameters": {}
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Sports] :white_check_mark: *Sports - News Ingest & Summarize* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "id": "job-complete-a1b2c3d4",
+      "name": "Slack - Job Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
     }
   ],
   "connections": {
     "Every 6 Hours": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
       "main": [
         [
-          { "node": "POST /ingest-news (NFL)", "type": "main", "index": 0 },
-          { "node": "POST /ingest-news (NCAA)", "type": "main", "index": 0 },
-          { "node": "POST /ingest-news (MLB)", "type": "main", "index": 0 }
+          {
+            "node": "POST /ingest-news (NFL)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST /ingest-news (NCAA)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST /ingest-news (MLB)",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "POST /ingest-news (NFL)": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /ingest-news (NCAA)": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /ingest-news (MLB)": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate Results": {
-      "main": [[{ "node": "Done", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

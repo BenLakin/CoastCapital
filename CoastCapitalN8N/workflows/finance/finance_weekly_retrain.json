@@ -80,7 +80,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -183,7 +183,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -204,6 +204,40 @@
         "jsonBody": "={\"workflow_name\": \"Finance - Weekly Model Retrain\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Finance] :white_check_mark: *Finance - Weekly Model Retrain* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "id": "job-complete-a1b2c3d4",
+      "name": "Slack - Job Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
         }
       }
     }
@@ -276,6 +310,17 @@
         [
           {
             "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
             "type": "main",
             "index": 0
           }

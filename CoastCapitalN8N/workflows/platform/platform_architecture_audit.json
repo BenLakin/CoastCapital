@@ -3,11 +3,22 @@
   "name": "Platform - Architecture Audit (Daily Code Quality)",
   "active": true,
   "versionId": "1",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "20", "name": "platform" },
-    { "id": "25", "name": "architecture" },
-    { "id": "26", "name": "audit" }
+    {
+      "id": "20",
+      "name": "platform"
+    },
+    {
+      "id": "25",
+      "name": "architecture"
+    },
+    {
+      "id": "26",
+      "name": "audit"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -22,9 +33,19 @@
       "name": "Daily 5 AM",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
-        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 5 * * *" }] }
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        }
       }
     },
     {
@@ -32,7 +53,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "platform-architecture-audit",
       "parameters": {
         "path": "platform-architecture-audit",
@@ -45,24 +69,38 @@
       "name": "Run Architecture Audit",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [500, 400],
+      "position": [
+        500,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-platform:5400/api/architecture-audit",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "X-API-Key", "value": "={{ $env.PLATFORM_API_KEY }}" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.PLATFORM_API_KEY }}"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "dry_run", "value": "false" }
+            {
+              "name": "dry_run",
+              "value": "false"
+            }
           ]
         },
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       }
     },
     {
@@ -70,16 +108,26 @@
       "name": "Any Findings?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [720, 400],
+      "position": [
+        720,
+        400
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-count",
               "leftValue": "={{ $json.count }}",
               "rightValue": "0",
-              "operator": { "type": "number", "operation": "gt" }
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
             }
           ],
           "combinator": "and"
@@ -91,9 +139,12 @@
       "name": "Format Findings as Markdown",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [940, 300],
+      "position": [
+        940,
+        300
+      ],
       "parameters": {
-        "jsCode": "const findings = $input.first().json.findings;\nconst now = new Date().toISOString().split('T')[0];\n\nlet md = `# Architecture Audit — ${now}\\n\\n`;\nmd += `**${findings.length} finding(s)**\\n\\n`;\n\nfor (const f of findings) {\n  const icon = f.severity === 'critical' ? '🔴' : f.severity === 'warning' ? '🟡' : 'ℹ️';\n  md += `## ${icon} [${f.severity.toUpperCase()}] ${f.title}\\n`;\n  md += `**Module:** ${f.module}`;\n  if (f.file) md += ` | **File:** ${f.file}`;\n  md += `\\n\\n${f.description}\\n\\n`;\n  if (f.suggested_fix) md += `**Suggested Fix:** ${f.suggested_fix}\\n\\n`;\n  md += `---\\n\\n`;\n}\n\nconst slackSummary = findings.map(f => {\n  const icon = f.severity === 'critical' ? ':red_circle:' : f.severity === 'warning' ? ':warning:' : ':information_source:';\n  return `${icon} *${f.title}* (${f.module})`;\n}).join('\\n');\n\nreturn [{ json: { markdown: md, slack_summary: slackSummary, count: findings.length, timestamp: now } }];"
+        "jsCode": "const findings = $input.first().json.findings;\nconst now = new Date().toISOString().split('T')[0];\n\nlet md = `# Architecture Audit \u2014 ${now}\\n\\n`;\nmd += `**${findings.length} finding(s)**\\n\\n`;\n\nfor (const f of findings) {\n  const icon = f.severity === 'critical' ? '\ud83d\udd34' : f.severity === 'warning' ? '\ud83d\udfe1' : '\u2139\ufe0f';\n  md += `## ${icon} [${f.severity.toUpperCase()}] ${f.title}\\n`;\n  md += `**Module:** ${f.module}`;\n  if (f.file) md += ` | **File:** ${f.file}`;\n  md += `\\n\\n${f.description}\\n\\n`;\n  if (f.suggested_fix) md += `**Suggested Fix:** ${f.suggested_fix}\\n\\n`;\n  md += `---\\n\\n`;\n}\n\nconst slackSummary = findings.map(f => {\n  const icon = f.severity === 'critical' ? ':red_circle:' : f.severity === 'warning' ? ':warning:' : ':information_source:';\n  return `${icon} *${f.title}* (${f.module})`;\n}).join('\\n');\n\nreturn [{ json: { markdown: md, slack_summary: slackSummary, count: findings.length, timestamp: now } }];"
       }
     },
     {
@@ -101,7 +152,10 @@
       "name": "Create Git Branch",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
-      "position": [1160, 300],
+      "position": [
+        1160,
+        300
+      ],
       "parameters": {
         "command": "=cd /workspace && git checkout -b audit/{{ $json.timestamp }} && mkdir -p .audit && echo '{{ $json.markdown }}' > .audit/audit-{{ $json.timestamp }}.md && git add .audit/ && git -c user.name='{{ $env.GIT_USER_NAME }}' -c user.email='{{ $env.GIT_USER_EMAIL }}' commit -m 'chore: architecture audit findings {{ $json.timestamp }}'"
       }
@@ -111,9 +165,12 @@
       "name": "Push & Create PR",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
-      "position": [1380, 300],
+      "position": [
+        1380,
+        300
+      ],
       "parameters": {
-        "command": "=cd /workspace && git push origin audit/{{ $('Format Findings as Markdown').first().json.timestamp }} && gh pr create --title 'chore: architecture audit — {{ $('Format Findings as Markdown').first().json.count }} findings' --body '## Architecture Audit Findings\\n\\nAutomated audit by ArchitectureAgent.\\n\\n{{ $('Format Findings as Markdown').first().json.slack_summary }}'"
+        "command": "=cd /workspace && git push origin audit/{{ $('Format Findings as Markdown').first().json.timestamp }} && gh pr create --title 'chore: architecture audit \u2014 {{ $('Format Findings as Markdown').first().json.count }} findings' --body '## Architecture Audit Findings\\n\\nAutomated audit by ArchitectureAgent.\\n\\n{{ $('Format Findings as Markdown').first().json.slack_summary }}'"
       }
     },
     {
@@ -121,29 +178,146 @@
       "name": "Slack - Findings",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1600, 300],
+      "position": [
+        1600,
+        300
+      ],
       "parameters": {
         "channel": "#coast-action-needed",
-        "text": "=[Architecture] 🏗️ Daily audit found *{{ $('Format Findings as Markdown').first().json.count }}* issue(s):\\n\\n{{ $('Format Findings as Markdown').first().json.slack_summary }}\\n\\nMR created for review.",
+        "text": "=[Architecture] \ud83c\udfd7\ufe0f Daily audit found *{{ $('Format Findings as Markdown').first().json.count }}* issue(s):\\n\\n{{ $('Format Findings as Markdown').first().json.slack_summary }}\\n\\nMR created for review.",
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Platform] :white_check_mark: *Platform - Architecture Audit (Daily Code Quality)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "id": "job-complete-a1b2c3d4",
+      "name": "Slack - Job Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     }
   ],
   "connections": {
-    "Daily 5 AM": { "main": [[{ "node": "Run Architecture Audit", "type": "main", "index": 0 }]] },
-    "Webhook Trigger": { "main": [[{ "node": "Run Architecture Audit", "type": "main", "index": 0 }]] },
-    "Run Architecture Audit": { "main": [[{ "node": "Any Findings?", "type": "main", "index": 0 }]] },
+    "Daily 5 AM": {
+      "main": [
+        [
+          {
+            "node": "Run Architecture Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Run Architecture Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Architecture Audit": {
+      "main": [
+        [
+          {
+            "node": "Any Findings?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Any Findings?": {
       "main": [
-        [{ "node": "Format Findings as Markdown", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Format Findings as Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
-    "Format Findings as Markdown": { "main": [[{ "node": "Create Git Branch", "type": "main", "index": 0 }]] },
-    "Create Git Branch": { "main": [[{ "node": "Push & Create PR", "type": "main", "index": 0 }]] },
-    "Push & Create PR": { "main": [[{ "node": "Slack - Findings", "type": "main", "index": 0 }]] }
+    "Format Findings as Markdown": {
+      "main": [
+        [
+          {
+            "node": "Create Git Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Git Branch": {
+      "main": [
+        [
+          {
+            "node": "Push & Create PR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push & Create PR": {
+      "main": [
+        [
+          {
+            "node": "Slack - Findings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Run Architecture Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

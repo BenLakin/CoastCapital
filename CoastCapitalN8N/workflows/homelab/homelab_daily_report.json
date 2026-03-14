@@ -80,7 +80,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -179,7 +179,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -226,6 +226,17 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
     }
   ],
   "connections": {
@@ -310,6 +321,17 @@
     },
     "Email - Daily Digest": {
       "main": []
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

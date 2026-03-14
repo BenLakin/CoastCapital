@@ -84,7 +84,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -253,7 +253,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -277,6 +277,40 @@
         }
       },
       "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[HomeLab] :white_check_mark: *Platform - Health Check (5 min)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "id": "job-complete-a1b2c3d4",
+      "name": "Slack - Job Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
     }
   ],
   "connections": {
@@ -414,6 +448,17 @@
           }
         ],
         []
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   }

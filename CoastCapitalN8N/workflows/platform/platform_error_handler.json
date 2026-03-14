@@ -1,12 +1,20 @@
 {
   "id": "a1b2c3d4-5002-4000-800a-000000000021",
-  "name": "Platform - Error Handler (Agent-Routed → Git MR → Slack)",
+  "name": "Platform - Error Handler (Agent-Routed \u2192 Git MR \u2192 Slack)",
   "active": true,
   "versionId": "2",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "20", "name": "platform" },
-    { "id": "22", "name": "error-handler" }
+    {
+      "id": "20",
+      "name": "platform"
+    },
+    {
+      "id": "22",
+      "name": "error-handler"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,7 +29,10 @@
       "name": "Error Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 400],
+      "position": [
+        250,
+        400
+      ],
       "webhookId": "platform-error-handler",
       "parameters": {
         "path": "platform-error-handler",
@@ -34,16 +45,44 @@
       "name": "Capture Error Details",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [470, 400],
+      "position": [
+        470,
+        400
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
           "assignments": [
-            { "id": "wf",     "name": "workflow_name", "value": "={{ $json.body.workflow_name || 'unknown' }}", "type": "string" },
-            { "id": "err",    "name": "error_message", "value": "={{ $json.body.error_message || 'No error message provided' }}", "type": "string" },
-            { "id": "mod",    "name": "module",        "value": "={{ $json.body.module || 'unknown' }}", "type": "string" },
-            { "id": "ts",     "name": "timestamp",     "value": "={{ $now.format('yyyy-MM-dd_HH-mm-ss') }}", "type": "string" },
-            { "id": "branch", "name": "branch_name",   "value": "=fix/{{ $json.body.module || 'unknown' }}-{{ $now.format('yyyyMMdd-HHmmss') }}", "type": "string" }
+            {
+              "id": "wf",
+              "name": "workflow_name",
+              "value": "={{ $json.body.workflow_name || 'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "err",
+              "name": "error_message",
+              "value": "={{ $json.body.error_message || 'No error message provided' }}",
+              "type": "string"
+            },
+            {
+              "id": "mod",
+              "name": "module",
+              "value": "={{ $json.body.module || 'unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "ts",
+              "name": "timestamp",
+              "value": "={{ $now.format('yyyy-MM-dd_HH-mm-ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "branch",
+              "name": "branch_name",
+              "value": "=fix/{{ $json.body.module || 'unknown' }}-{{ $now.format('yyyyMMdd-HHmmss') }}",
+              "type": "string"
+            }
           ]
         }
       }
@@ -53,30 +92,56 @@
       "name": "Slack - Job Log",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 600],
+      "position": [
+        470,
+        600
+      ],
       "parameters": {
         "channel": "#coast-jobs-fyi",
         "text": "=[Platform] Error handler triggered for {{ $json.body.workflow_name || 'unknown' }} ({{ $json.body.module || 'unknown' }})",
         "otherOptions": {}
       },
-      "credentials": { "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" } }
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
     },
     {
       "id": "node-route",
       "name": "Route by Module",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [690, 400],
+      "position": [
+        690,
+        400
+      ],
       "parameters": {
         "dataType": "string",
         "value1": "={{ $json.module }}",
         "rules": {
           "rules": [
-            { "value2": "finance",   "output": 0 },
-            { "value2": "homelab",   "output": 1 },
-            { "value2": "assistant", "output": 2 },
-            { "value2": "sports",    "output": 3 },
-            { "value2": "platform",  "output": 4 }
+            {
+              "value2": "finance",
+              "output": 0
+            },
+            {
+              "value2": "homelab",
+              "output": 1
+            },
+            {
+              "value2": "assistant",
+              "output": 2
+            },
+            {
+              "value2": "sports",
+              "output": 3
+            },
+            {
+              "value2": "platform",
+              "output": 4
+            }
           ]
         },
         "fallbackOutput": 5
@@ -87,16 +152,28 @@
       "name": "FinanceAgent - Diagnose",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 100],
+      "position": [
+        920,
+        100
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-finance:5000/api/agent/chat",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"message\": \"A production error occurred in the Finance module. Workflow: {{ $('Capture Error Details').item.json.workflow_name }}. Error: {{ $('Capture Error Details').item.json.error_message }}. Please diagnose the root cause and suggest a specific code fix with file paths.\"}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       }
     },
     {
@@ -104,16 +181,32 @@
       "name": "HomeLabAgent - Diagnose",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 250],
+      "position": [
+        920,
+        250
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-homelab:5000/api/agent/chat",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }, { "name": "X-API-Key", "value": "={{ $env.API_KEY }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"message\": \"A production error occurred in the HomeLab module. Workflow: {{ $('Capture Error Details').item.json.workflow_name }}. Error: {{ $('Capture Error Details').item.json.error_message }}. Please diagnose the root cause and suggest a specific code fix.\"}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       }
     },
     {
@@ -121,16 +214,28 @@
       "name": "AssistantAgent - Diagnose",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 400],
+      "position": [
+        920,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-assistant:5000/api/agent/chat",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"message\": \"A production error occurred in the PersonalAssistant module. Workflow: {{ $('Capture Error Details').item.json.workflow_name }}. Error: {{ $('Capture Error Details').item.json.error_message }}. Please diagnose the root cause and suggest a specific code fix.\"}",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       }
     },
     {
@@ -138,16 +243,32 @@
       "name": "ArchitectureAgent - Diagnose (Sports/Platform)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 550],
+      "position": [
+        920,
+        550
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-platform:5400/api/architecture-audit",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }, { "name": "X-API-Key", "value": "={{ $env.PLATFORM_API_KEY }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.PLATFORM_API_KEY }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"modules\": [\"{{ $('Capture Error Details').item.json.module }}\"]}",
-        "options": { "timeout": 300000 }
+        "options": {
+          "timeout": 300000
+        }
       }
     },
     {
@@ -155,22 +276,36 @@
       "name": "Fallback - Anthropic API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [920, 720],
+      "position": [
+        920,
+        720
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "content-type", "value": "application/json" }
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2048, messages: [{ role: 'user', content: 'You are a senior engineer for CoastCapital. A workflow has failed. Analyze and suggest a fix.\\n\\nWorkflow: ' + $('Capture Error Details').item.json.workflow_name + '\\nModule: ' + $('Capture Error Details').item.json.module + '\\nError: ' + $('Capture Error Details').item.json.error_message + '\\n\\nProvide: ## Root Cause\\n## Suggested Fix\\n## Prevention' }] }) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -178,7 +313,10 @@
       "name": "Normalize Agent Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1160, 400],
+      "position": [
+        1160,
+        400
+      ],
       "parameters": {
         "jsCode": "const input = $input.first().json;\nlet fixContent = '';\n\n// Handle different response formats from different agents\nif (input.content && Array.isArray(input.content)) {\n  // Direct Anthropic API response\n  fixContent = input.content.map(c => c.text || '').join('\\n');\n} else if (input.response) {\n  // Agent chat response\n  fixContent = input.response;\n} else if (input.findings) {\n  // Architecture agent response\n  fixContent = input.findings.map(f => `## [${f.severity}] ${f.title}\\n${f.description}\\n\\n**Fix:** ${f.suggested_fix || 'N/A'}`).join('\\n\\n---\\n\\n');\n} else {\n  fixContent = JSON.stringify(input, null, 2);\n}\n\nconst details = $('Capture Error Details').first().json;\nconst md = `# Auto-Fix Suggestion\\n\\n**Workflow:** ${details.workflow_name}\\n**Module:** ${details.module}\\n**Timestamp:** ${details.timestamp}\\n**Error:** ${details.error_message}\\n\\n---\\n\\n${fixContent}`;\n\nreturn [{ json: { fix_content: md } }];"
       }
@@ -188,7 +326,10 @@
       "name": "Git - Create Branch & Commit",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
-      "position": [1380, 400],
+      "position": [
+        1380,
+        400
+      ],
       "parameters": {
         "command": "=cd /workspace && git checkout -b {{ $('Capture Error Details').item.json.branch_name }} && mkdir -p .fixes && cat > .fixes/{{ $('Capture Error Details').item.json.branch_name }}.md << 'FIXEOF'\n{{ $json.fix_content }}\nFIXEOF\ngit add .fixes/ && git -c user.name='{{ $env.GIT_USER_NAME }}' -c user.email='{{ $env.GIT_USER_EMAIL }}' commit -m 'fix: auto-generated fix for {{ $('Capture Error Details').item.json.workflow_name }}' && git push origin {{ $('Capture Error Details').item.json.branch_name }} 2>&1 && git checkout main 2>&1"
       }
@@ -198,9 +339,12 @@
       "name": "GitHub - Create PR",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
-      "position": [1600, 400],
+      "position": [
+        1600,
+        400
+      ],
       "parameters": {
-        "command": "=cd /workspace && gh pr create --title 'fix: {{ $('Capture Error Details').item.json.module }} — {{ $('Capture Error Details').item.json.workflow_name }} error' --body '## Auto-Generated Fix\\n\\n**Module:** {{ $('Capture Error Details').item.json.module }}\\n**Workflow:** {{ $('Capture Error Details').item.json.workflow_name }}\\n**Error:** {{ $('Capture Error Details').item.json.error_message }}\\n\\nDiagnosed by domain-specific agent. Review `.fixes/` for suggested changes.' --base main --head {{ $('Capture Error Details').item.json.branch_name }} 2>&1 || echo 'PR_CREATION_SKIPPED'"
+        "command": "=cd /workspace && gh pr create --title 'fix: {{ $('Capture Error Details').item.json.module }} \u2014 {{ $('Capture Error Details').item.json.workflow_name }} error' --body '## Auto-Generated Fix\\n\\n**Module:** {{ $('Capture Error Details').item.json.module }}\\n**Workflow:** {{ $('Capture Error Details').item.json.workflow_name }}\\n**Error:** {{ $('Capture Error Details').item.json.error_message }}\\n\\nDiagnosed by domain-specific agent. Review `.fixes/` for suggested changes.' --base main --head {{ $('Capture Error Details').item.json.branch_name }} 2>&1 || echo 'PR_CREATION_SKIPPED'"
       }
     },
     {
@@ -208,42 +352,211 @@
       "name": "Slack - MR Created",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1820, 400],
+      "position": [
+        1820,
+        400
+      ],
       "parameters": {
         "channel": "#coast-action-needed",
-        "text": "=[Platform] 🔧 Auto-fix MR created for *{{ $('Capture Error Details').item.json.workflow_name }}* ({{ $('Capture Error Details').item.json.module }})\\nDiagnosed by {{ $('Capture Error Details').item.json.module === 'finance' ? 'FinanceAgent' : $('Capture Error Details').item.json.module === 'homelab' ? 'HomeLabAgent' : $('Capture Error Details').item.json.module === 'assistant' ? 'AssistantAgent' : 'ArchitectureAgent' }}\\nBranch: `{{ $('Capture Error Details').item.json.branch_name }}`",
+        "text": "=[Platform] \ud83d\udd27 Auto-fix MR created for *{{ $('Capture Error Details').item.json.workflow_name }}* ({{ $('Capture Error Details').item.json.module }})\\nDiagnosed by {{ $('Capture Error Details').item.json.module === 'finance' ? 'FinanceAgent' : $('Capture Error Details').item.json.module === 'homelab' ? 'HomeLabAgent' : $('Capture Error Details').item.json.module === 'assistant' ? 'AssistantAgent' : 'ArchitectureAgent' }}\\nBranch: `{{ $('Capture Error Details').item.json.branch_name }}`",
         "otherOptions": {}
       },
-      "credentials": { "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" } }
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        200
+      ]
     }
   ],
   "connections": {
     "Error Webhook": {
-      "main": [[
-        { "node": "Capture Error Details", "type": "main", "index": 0 },
-        { "node": "Slack - Job Log", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Capture Error Details",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Job Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Capture Error Details": {
-      "main": [[{ "node": "Route by Module", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Route by Module",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Route by Module": {
       "main": [
-        [{ "node": "FinanceAgent - Diagnose", "type": "main", "index": 0 }],
-        [{ "node": "HomeLabAgent - Diagnose", "type": "main", "index": 0 }],
-        [{ "node": "AssistantAgent - Diagnose", "type": "main", "index": 0 }],
-        [{ "node": "ArchitectureAgent - Diagnose (Sports/Platform)", "type": "main", "index": 0 }],
-        [{ "node": "ArchitectureAgent - Diagnose (Sports/Platform)", "type": "main", "index": 0 }],
-        [{ "node": "Fallback - Anthropic API", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "FinanceAgent - Diagnose",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HomeLabAgent - Diagnose",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AssistantAgent - Diagnose",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ArchitectureAgent - Diagnose (Sports/Platform)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ArchitectureAgent - Diagnose (Sports/Platform)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback - Anthropic API",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "FinanceAgent - Diagnose":                       { "main": [[{ "node": "Normalize Agent Response", "type": "main", "index": 0 }]] },
-    "HomeLabAgent - Diagnose":                       { "main": [[{ "node": "Normalize Agent Response", "type": "main", "index": 0 }]] },
-    "AssistantAgent - Diagnose":                     { "main": [[{ "node": "Normalize Agent Response", "type": "main", "index": 0 }]] },
-    "ArchitectureAgent - Diagnose (Sports/Platform)": { "main": [[{ "node": "Normalize Agent Response", "type": "main", "index": 0 }]] },
-    "Fallback - Anthropic API":                      { "main": [[{ "node": "Normalize Agent Response", "type": "main", "index": 0 }]] },
-    "Normalize Agent Response": { "main": [[{ "node": "Git - Create Branch & Commit", "type": "main", "index": 0 }]] },
-    "Git - Create Branch & Commit": { "main": [[{ "node": "GitHub - Create PR", "type": "main", "index": 0 }]] },
-    "GitHub - Create PR": { "main": [[{ "node": "Slack - MR Created", "type": "main", "index": 0 }]] }
+    "FinanceAgent - Diagnose": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HomeLabAgent - Diagnose": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AssistantAgent - Diagnose": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ArchitectureAgent - Diagnose (Sports/Platform)": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback - Anthropic API": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Agent Response": {
+      "main": [
+        [
+          {
+            "node": "Git - Create Branch & Commit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Git - Create Branch & Commit": {
+      "main": [
+        [
+          {
+            "node": "GitHub - Create PR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub - Create PR": {
+      "main": [
+        [
+          {
+            "node": "Slack - MR Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Capture Error Details",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - Job Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

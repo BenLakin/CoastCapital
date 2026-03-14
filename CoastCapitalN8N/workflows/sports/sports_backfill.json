@@ -71,7 +71,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -174,14 +174,14 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
+        "channel": "#coast-jobs-fyi",
         "text": "=[Sports] Backfill + feature materialization complete.\nGames backfilled: {{ $json.games_processed || 'check logs' }}",
         "otherOptions": {}
       },
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -204,7 +204,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },

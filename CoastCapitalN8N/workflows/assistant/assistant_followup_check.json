@@ -3,10 +3,18 @@
   "name": "Assistant - Followup Check (Unanswered Emails > 3 Days)",
   "active": true,
   "versionId": "1",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "5", "name": "assistant" },
-    { "id": "4", "name": "daily" }
+    {
+      "id": "5",
+      "name": "assistant"
+    },
+    {
+      "id": "4",
+      "name": "daily"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,10 +29,18 @@
       "name": "Daily 9:00 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
         }
       }
     },
@@ -33,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "assistant-followup",
       "parameters": {
         "path": "assistant-followup",
@@ -46,7 +65,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -55,7 +77,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     },
     {
@@ -63,16 +88,24 @@
       "name": "POST /followup",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 300],
+      "position": [
+        690,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-assistant:5000/api/pipeline/followup",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-assistant-api", "name": "Assistant API Key" }
+        "httpHeaderAuth": {
+          "id": "cred-assistant-api",
+          "name": "Assistant API Key"
+        }
       }
     },
     {
@@ -80,7 +113,10 @@
       "name": "Has Stale Followups?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 300],
+      "position": [
+        910,
+        300
+      ],
       "parameters": {
         "conditions": {
           "conditions": [
@@ -88,7 +124,10 @@
               "id": "cond-has",
               "leftValue": "={{ $json.stale_count || $json.followups_count || 0 }}",
               "rightValue": "0",
-              "operator": { "type": "number", "operation": "larger" }
+              "operator": {
+                "type": "number",
+                "operation": "larger"
+              }
             }
           ],
           "combinator": "and"
@@ -100,7 +139,10 @@
       "name": "Build Alert Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [1130, 200],
+      "position": [
+        1130,
+        200
+      ],
       "parameters": {
         "mode": "manual",
         "assignments": {
@@ -120,7 +162,10 @@
       "name": "Slack - Followup Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1350, 200],
+      "position": [
+        1350,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -129,7 +174,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     },
     {
@@ -137,30 +185,130 @@
       "name": "No Followups (noOp)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1130, 400]
+      "position": [
+        1130,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": "#coast-jobs-fyi",
+        "text": "=[Assistant] :white_check_mark: *Assistant - Followup Check (Unanswered Emails > 3 Days)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "id": "job-complete-a1b2c3d4",
+      "name": "Slack - Job Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        300
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
+      }
     }
   ],
   "connections": {
     "Daily 9:00 AM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "POST /followup", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /followup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /followup": {
-      "main": [[{ "node": "Has Stale Followups?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has Stale Followups?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Stale Followups?": {
       "main": [
-        [{ "node": "Build Alert Message", "type": "main", "index": 0 }],
-        [{ "node": "No Followups (noOp)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Alert Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Followups (noOp)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Alert Message": {
-      "main": [[{ "node": "Slack - Followup Alert", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Slack - Followup Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

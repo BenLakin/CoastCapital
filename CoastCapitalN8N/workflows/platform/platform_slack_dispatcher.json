@@ -1,12 +1,20 @@
 {
   "id": "a1b2c3d4-5001-4000-800a-000000000020",
-  "name": "Platform - Slack Dispatcher (MCP Intent → Workflow)",
+  "name": "Platform - Slack Dispatcher (MCP Intent \u2192 Workflow)",
   "active": true,
   "versionId": "2",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "20", "name": "platform" },
-    { "id": "21", "name": "slack" }
+    {
+      "id": "20",
+      "name": "platform"
+    },
+    {
+      "id": "21",
+      "name": "slack"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,13 +29,21 @@
       "name": "Slack Trigger",
       "type": "n8n-nodes-base.slackTrigger",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "channel": "#coast-action-needed",
-        "updates": ["message"]
+        "updates": [
+          "message"
+        ]
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     },
     {
@@ -35,16 +51,26 @@
       "name": "Filter Bot Messages",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-not-bot",
               "leftValue": "={{ $json.bot_id }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "empty" }
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
             }
           ],
           "combinator": "and"
@@ -53,24 +79,35 @@
     },
     {
       "id": "node-classify",
-      "name": "MCP — Classify Intent",
+      "name": "MCP \u2014 Classify Intent",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 250],
+      "position": [
+        690,
+        250
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-platform:5400/api/classify-intent",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "X-API-Key", "value": "={{ $env.PLATFORM_API_KEY }}" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.PLATFORM_API_KEY }}"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"text\": \"{{ $('Slack Trigger').first().json.text }}\", \"source\": \"slack\"}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       }
     },
     {
@@ -78,22 +115,35 @@
       "name": "Confidence >= 0.6?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 250],
+      "position": [
+        910,
+        250
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-conf",
               "leftValue": "={{ $json.confidence }}",
               "rightValue": "0.6",
-              "operator": { "type": "number", "operation": "gte" }
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
             },
             {
               "id": "cond-not-unclear",
               "leftValue": "={{ $json.intent }}",
               "rightValue": "unclear",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -105,20 +155,28 @@
       "name": "Dispatch to Workflow",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1130, 200],
+      "position": [
+        1130,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "=http://localhost:5678{{ $json.webhook_path }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"triggered_by\": \"slack\", \"user_message\": \"{{ $('Slack Trigger').first().json.text }}\", \"params\": {{ JSON.stringify($('MCP — Classify Intent').first().json.params) }} }",
-        "options": { "timeout": 10000 }
+        "jsonBody": "={\"triggered_by\": \"slack\", \"user_message\": \"{{ $('Slack Trigger').first().json.text }}\", \"params\": {{ JSON.stringify($('MCP \u2014 Classify Intent').first().json.params) }} }",
+        "options": {
+          "timeout": 10000
+        }
       }
     },
     {
@@ -126,14 +184,20 @@
       "name": "Slack - Acknowledged",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1350, 200],
+      "position": [
+        1350,
+        200
+      ],
       "parameters": {
         "channel": "#coast-action-needed",
-        "text": "=✅ Got it! Dispatching *{{ $('MCP — Classify Intent').first().json.intent }}* ({{ Math.round($('MCP — Classify Intent').first().json.confidence * 100) }}% confidence)",
+        "text": "=\u2705 Got it! Dispatching *{{ $('MCP \u2014 Classify Intent').first().json.intent }}* ({{ Math.round($('MCP \u2014 Classify Intent').first().json.confidence * 100) }}% confidence)",
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     },
     {
@@ -141,32 +205,86 @@
       "name": "Slack - Ask Clarification",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1130, 380],
+      "position": [
+        1130,
+        380
+      ],
       "parameters": {
         "channel": "#coast-action-needed",
-        "text": "=🤔 {{ $('MCP — Classify Intent').first().json.clarification || \"I'm not sure what you'd like me to do. Could you rephrase?\" }}",
+        "text": "=\ud83e\udd14 {{ $('MCP \u2014 Classify Intent').first().json.clarification || \"I'm not sure what you'd like me to do. Could you rephrase?\" }}",
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "Slack account"
+        }
       }
     }
   ],
   "connections": {
-    "Slack Trigger": { "main": [[{ "node": "Filter Bot Messages", "type": "main", "index": 0 }]] },
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter Bot Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Filter Bot Messages": {
       "main": [
-        [{ "node": "MCP — Classify Intent", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "MCP \u2014 Classify Intent",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     },
-    "MCP — Classify Intent": { "main": [[{ "node": "Confidence >= 0.6?", "type": "main", "index": 0 }]] },
-    "Confidence >= 0.6?": {
+    "MCP \u2014 Classify Intent": {
       "main": [
-        [{ "node": "Dispatch to Workflow", "type": "main", "index": 0 }],
-        [{ "node": "Slack - Ask Clarification", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Confidence >= 0.6?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Dispatch to Workflow": { "main": [[{ "node": "Slack - Acknowledged", "type": "main", "index": 0 }]] }
+    "Confidence >= 0.6?": {
+      "main": [
+        [
+          {
+            "node": "Dispatch to Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Ask Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispatch to Workflow": {
+      "main": [
+        [
+          {
+            "node": "Slack - Acknowledged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   }
 }

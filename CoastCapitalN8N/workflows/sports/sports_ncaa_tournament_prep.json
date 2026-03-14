@@ -72,7 +72,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -271,7 +271,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -316,14 +316,14 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
+        "channel": "#coast-jobs-fyi",
         "text": "=[Sports] NCAA Tournament Prep Complete ({{ $now.format('yyyy-MM-dd') }})\nPipeline: Backfill -> Features -> Train -> Promote -> Simulate\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}\nModel Accuracy: {{ $json.accuracy || 'N/A' }}\nBracket HTML: {{ $json.html_url || 'generated' }}",
         "otherOptions": {}
       },
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -346,7 +346,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -389,7 +389,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -432,7 +432,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -475,7 +475,7 @@
       "credentials": {
         "slackApi": {
           "id": "cred-slack",
-          "name": "CoastCapital Slack"
+          "name": "Slack account"
         }
       }
     },
@@ -498,6 +498,17 @@
           "timeout": 10000
         }
       }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
     }
   ],
   "connections": {
@@ -684,6 +695,17 @@
         [
           {
             "node": "Error Handler - Simulate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
             "type": "main",
             "index": 0
           }
