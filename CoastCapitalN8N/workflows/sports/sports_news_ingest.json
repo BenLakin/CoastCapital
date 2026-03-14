@@ -76,7 +76,7 @@
         "text": "=[Sports] Job started: Sports - News Ingest & Summarize ({{ $now.format('yyyy-MM-dd HH:mm') }})",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -222,7 +222,7 @@
         "text": "=[Sports] :white_check_mark: *Sports - News Ingest & Summarize* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",

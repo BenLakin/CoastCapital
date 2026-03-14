@@ -95,7 +95,7 @@
         "text": "[Database] Nightly Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -119,7 +119,7 @@
         "text": "[Database] Health Check workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -143,7 +143,7 @@
         "text": "[Database] Weekly Full Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -167,7 +167,7 @@
         "text": "[Database] Manual Maintenance triggered via webhook at {{ $now.toISO() }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -362,7 +362,7 @@
         "text": "=[Database] :mag: Maintenance recommendations found ({{ $json.count }}). Review recommended optimizations in the maintenance dashboard.",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -386,7 +386,7 @@
         "text": "=[Database] Nightly maintenance completed successfully. No recommendations.",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -472,7 +472,7 @@
         "text": "=[Database] Health snapshot captured at {{ $now.toISO() }}. See maintenance dashboard for details.",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-recent-summaries"
+        "channel": "coast-recent-summaries"
       },
       "credentials": {
         "slackApi": {
@@ -573,7 +573,7 @@
         "text": "=[Database] Weekly full maintenance and status flush completed at {{ $now.toISO() }}.",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {

@@ -180,7 +180,7 @@
         "text": "={{ $json.message }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-current-status"
+        "channel": "coast-current-status"
       },
       "credentials": {
         "slackApi": {

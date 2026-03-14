@@ -76,7 +76,7 @@
         "text": "[HomeLab] Daily Infrastructure Report workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -176,7 +176,7 @@
         "text": "={{ $json.report_text }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-recent-summaries"
+        "channel": "coast-recent-summaries"
       },
       "credentials": {
         "slackApi": {

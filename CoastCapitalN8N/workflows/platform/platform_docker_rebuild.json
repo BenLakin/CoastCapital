@@ -55,7 +55,7 @@
         "text": "[Platform] Docker rebuild started",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -287,7 +287,7 @@
         "text": "[Platform] All containers rebuilt successfully",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -311,7 +311,7 @@
         "text": "=[Platform] Docker rebuild partially failed: {{ $json.details }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {

@@ -68,7 +68,7 @@
         "text": "=[Sports] NCAA Tournament Prep started ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -268,7 +268,7 @@
         "text": "=[Sports] :warning: NCAA model promotion did not pass validation (continuing with existing model): {{ $json.error || $json.message || 'Check logs' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -321,7 +321,7 @@
         "text": "=[Sports] NCAA Tournament Prep Complete ({{ $now.format('yyyy-MM-dd') }})\nPipeline: Backfill -> Features -> Train -> Promote -> Simulate\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}\nModel Accuracy: {{ $json.accuracy || 'N/A' }}\nBracket HTML: {{ $json.html_url || 'generated' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -345,7 +345,7 @@
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -389,7 +389,7 @@
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -433,7 +433,7 @@
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -477,7 +477,7 @@
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {

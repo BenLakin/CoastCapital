@@ -76,7 +76,7 @@
         "text": "=[Sports] Job started: Sports - Daily Pipeline ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-jobs-fyi"
+        "channel": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -183,7 +183,7 @@
         "text": "={{ $json.message }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-recent-summaries"
+        "channel": "coast-recent-summaries"
       },
       "credentials": {
         "slackApi": {
@@ -207,7 +207,7 @@
         "text": "=[Sports] :x: *Sports - Daily Pipeline (Ingest + Score + Bet)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "select": "byName",
-        "channelId": "coast-action-needed"
+        "channel": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
