@@ -60,7 +60,8 @@
       "Read(//Volumes/CoastTechnology/CoastCapital/$dir/**)",
       "Bash(do ln:*)",
       "Bash(echo \"Symlinked $dir/.env\")",
-      "Bash(grep -n '^  [A-Z]' /Volumes/CoastTechnology/CoastCapital/*/docker-compose.yml)"
+      "Bash(grep -n '^  [A-Z]' /Volumes/CoastTechnology/CoastCapital/*/docker-compose.yml)",
+      "WebSearch"
     ]
   }
 }

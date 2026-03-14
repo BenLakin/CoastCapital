@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   n8n:
-    image: n8nio/n8n:1.76.1
+    image: n8nio/n8n:1.79.3
     container_name: coastcapital-n8n
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c", "chmod 600 /home/node/.n8n/config 2>/dev/null; exec n8n"]
