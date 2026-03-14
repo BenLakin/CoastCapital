@@ -18,7 +18,10 @@
       "name": "Nightly Schedule (2 AM)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -35,7 +38,10 @@
       "name": "Health Check (Every 6h)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 480]
+      "position": [
+        240,
+        480
+      ]
     },
     {
       "parameters": {
@@ -52,14 +58,20 @@
       "name": "Weekly Full Maintenance (Mon 8 AM)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 660]
+      "position": [
+        240,
+        660
+      ]
     },
     {
       "id": "node-webhook-trigger",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [240, 840],
+      "position": [
+        240,
+        840
+      ],
       "webhookId": "db-maintenance-webhook",
       "parameters": {
         "path": "/webhook/db-maintenance",
@@ -73,7 +85,10 @@
       "name": "Job Started - Nightly",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [420, 300],
+      "position": [
+        420,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -93,7 +108,10 @@
       "name": "Job Started - Health",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [420, 480],
+      "position": [
+        420,
+        480
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -113,7 +131,10 @@
       "name": "Job Started - Weekly",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [420, 660],
+      "position": [
+        420,
+        660
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -133,7 +154,10 @@
       "name": "Job Started - Webhook",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [420, 840],
+      "position": [
+        420,
+        840
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -175,7 +199,10 @@
       "name": "Analyze Tables",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [620, 240],
+      "position": [
+        620,
+        240
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -211,7 +238,10 @@
       "name": "Optimize Tables",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [860, 240],
+      "position": [
+        860,
+        240
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -247,7 +277,10 @@
       "name": "Capture Slow Queries",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1100, 240],
+      "position": [
+        1100,
+        240
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -268,7 +301,10 @@
       "name": "Get Recommendations",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1340, 240],
+      "position": [
+        1340,
+        240
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -302,14 +338,20 @@
       "name": "Has Recommendations?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1580, 240]
+      "position": [
+        1580,
+        240
+      ]
     },
     {
       "id": "node-slack-recommendations",
       "name": "Slack - Recommendations Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1800, 140],
+      "position": [
+        1800,
+        140
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -329,7 +371,10 @@
       "name": "Slack - Nightly Complete",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1800, 340],
+      "position": [
+        1800,
+        340
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -371,7 +416,10 @@
       "name": "Health Snapshot",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [620, 480],
+      "position": [
+        620,
+        480
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -392,7 +440,10 @@
       "name": "Read Health Snapshot",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [860, 480],
+      "position": [
+        860,
+        480
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -405,7 +456,10 @@
       "name": "Slack - Health Report",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1100, 480],
+      "position": [
+        1100,
+        480
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -447,7 +501,10 @@
       "name": "Full Maintenance",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [620, 660],
+      "position": [
+        620,
+        660
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -483,7 +540,10 @@
       "name": "Flush Status Counters",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [860, 660],
+      "position": [
+        860,
+        660
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "maintenance-api-key",
@@ -496,7 +556,10 @@
       "name": "Slack - Weekly Complete",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1100, 660],
+      "position": [
+        1100,
+        660
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -516,13 +579,16 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1100, 840],
+      "position": [
+        1100,
+        840
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"mysql_maintenance\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"database\"}",
+        "jsonBody": "={\"workflow_name\": \"MySQL Database Maintenance\", \"module\": \"database\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
@@ -534,123 +600,199 @@
     "Nightly Schedule (2 AM)": {
       "main": [
         [
-          { "node": "Job Started - Nightly", "type": "main", "index": 0 }
+          {
+            "node": "Job Started - Nightly",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Health Check (Every 6h)": {
       "main": [
         [
-          { "node": "Job Started - Health", "type": "main", "index": 0 }
+          {
+            "node": "Job Started - Health",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Weekly Full Maintenance (Mon 8 AM)": {
       "main": [
         [
-          { "node": "Job Started - Weekly", "type": "main", "index": 0 }
+          {
+            "node": "Job Started - Weekly",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Webhook Trigger": {
       "main": [
         [
-          { "node": "Job Started - Webhook", "type": "main", "index": 0 }
+          {
+            "node": "Job Started - Webhook",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started - Nightly": {
       "main": [
         [
-          { "node": "Analyze Tables", "type": "main", "index": 0 }
+          {
+            "node": "Analyze Tables",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started - Health": {
       "main": [
         [
-          { "node": "Health Snapshot", "type": "main", "index": 0 }
+          {
+            "node": "Health Snapshot",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started - Weekly": {
       "main": [
         [
-          { "node": "Full Maintenance", "type": "main", "index": 0 }
+          {
+            "node": "Full Maintenance",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started - Webhook": {
       "main": [
         [
-          { "node": "Analyze Tables", "type": "main", "index": 0 }
+          {
+            "node": "Analyze Tables",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Analyze Tables": {
       "main": [
         [
-          { "node": "Optimize Tables", "type": "main", "index": 0 }
+          {
+            "node": "Optimize Tables",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Optimize Tables": {
       "main": [
         [
-          { "node": "Capture Slow Queries", "type": "main", "index": 0 }
+          {
+            "node": "Capture Slow Queries",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Capture Slow Queries": {
       "main": [
         [
-          { "node": "Get Recommendations", "type": "main", "index": 0 }
+          {
+            "node": "Get Recommendations",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Get Recommendations": {
       "main": [
         [
-          { "node": "Has Recommendations?", "type": "main", "index": 0 }
+          {
+            "node": "Has Recommendations?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Has Recommendations?": {
       "main": [
         [
-          { "node": "Slack - Recommendations Alert", "type": "main", "index": 0 },
-          { "node": "Call Error Handler", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Recommendations Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Slack - Nightly Complete", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Nightly Complete",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Health Snapshot": {
       "main": [
         [
-          { "node": "Read Health Snapshot", "type": "main", "index": 0 }
+          {
+            "node": "Read Health Snapshot",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Read Health Snapshot": {
       "main": [
         [
-          { "node": "Slack - Health Report", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Health Report",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Full Maintenance": {
       "main": [
         [
-          { "node": "Flush Status Counters", "type": "main", "index": 0 }
+          {
+            "node": "Flush Status Counters",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Flush Status Counters": {
       "main": [
         [
-          { "node": "Slack - Weekly Complete", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Weekly Complete",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }

@@ -7,8 +7,14 @@
     "instanceId": "coastcapital-n8n"
   },
   "tags": [
-    { "id": "1", "name": "finance" },
-    { "id": "2", "name": "daily" }
+    {
+      "id": "1",
+      "name": "finance"
+    },
+    {
+      "id": "2",
+      "name": "daily"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -23,7 +29,10 @@
       "name": "Weekday 6:30 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -40,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "finance-daily-forecast",
       "parameters": {
         "path": "/webhook/finance-forecast",
@@ -54,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -74,14 +89,27 @@
       "name": "Set Request Parameters",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [690, 300],
+      "position": [
+        690,
+        300
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
         "assignments": {
           "assignments": [
-            { "id": "use_llm", "name": "use_llm", "value": true, "type": "boolean" },
-            { "id": "top_n", "name": "top_n", "value": 10, "type": "number" }
+            {
+              "id": "use_llm",
+              "name": "use_llm",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "top_n",
+              "name": "top_n",
+              "value": 10,
+              "type": "number"
+            }
           ]
         }
       }
@@ -91,7 +119,10 @@
       "name": "POST /n8n/daily-forecast",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [910, 300],
+      "position": [
+        910,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_finance:5000/n8n/daily-forecast",
@@ -100,8 +131,14 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "use_llm", "value": "={{ $json.use_llm }}" },
-            { "name": "top_n", "value": "={{ $json.top_n }}" }
+            {
+              "name": "use_llm",
+              "value": "={{ $json.use_llm }}"
+            },
+            {
+              "name": "top_n",
+              "value": "={{ $json.top_n }}"
+            }
           ]
         },
         "options": {
@@ -125,16 +162,26 @@
       "name": "Check Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1130, 300],
+      "position": [
+        1130,
+        300
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-status",
               "leftValue": "={{ $json.body.status }}",
               "rightValue": "success",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -146,7 +193,10 @@
       "name": "Slack - Morning Brief",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1350, 200],
+      "position": [
+        1350,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -166,13 +216,21 @@
       "name": "Log Error",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [1350, 400],
+      "position": [
+        1350,
+        400
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
         "assignments": {
           "assignments": [
-            { "id": "error_msg", "name": "error_message", "value": "=Daily forecast failed: {{ $json.body.error || $json.statusCode }}", "type": "string" }
+            {
+              "id": "error_msg",
+              "name": "error_message",
+              "value": "=Daily forecast failed: {{ $json.body.error || $json.statusCode }}",
+              "type": "string"
+            }
           ]
         }
       }
@@ -182,12 +240,15 @@
       "name": "Slack - Error Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1570, 400],
+      "position": [
+        1570,
+        400
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[Finance] :warning: {{ $json.error_message }}",
+        "text": "=[Finance] :x: *Finance - Daily Forecast* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -202,13 +263,16 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1790, 400],
+      "position": [
+        1790,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \"workflow_name\": \"Finance - Daily Forecast\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"finance\" }",
+        "jsonBody": "={\"workflow_name\": \"Finance - Daily Forecast\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
@@ -217,31 +281,99 @@
   ],
   "connections": {
     "Weekday 6:30 AM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "Set Request Parameters", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Set Request Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set Request Parameters": {
-      "main": [[{ "node": "POST /n8n/daily-forecast", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /n8n/daily-forecast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /n8n/daily-forecast": {
-      "main": [[{ "node": "Check Success", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Success": {
       "main": [
-        [{ "node": "Slack - Morning Brief", "type": "main", "index": 0 }],
-        [{ "node": "Log Error", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Slack - Morning Brief",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Log Error": {
-      "main": [[{ "node": "Slack - Error Alert", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Slack - Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Slack - Error Alert": {
-      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

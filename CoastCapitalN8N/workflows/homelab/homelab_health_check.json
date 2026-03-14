@@ -7,9 +7,18 @@
     "instanceId": "coastcapital-n8n"
   },
   "tags": [
-    { "id": "4", "name": "homelab" },
-    { "id": "5", "name": "monitoring" },
-    { "id": "6", "name": "platform" }
+    {
+      "id": "4",
+      "name": "homelab"
+    },
+    {
+      "id": "5",
+      "name": "monitoring"
+    },
+    {
+      "id": "6",
+      "name": "platform"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -24,7 +33,10 @@
       "name": "Every 5 Minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 350],
+      "position": [
+        250,
+        350
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -41,7 +53,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 550],
+      "position": [
+        250,
+        550
+      ],
       "webhookId": "homelab-health-webhook",
       "parameters": {
         "path": "/webhook/homelab-health",
@@ -55,7 +70,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [400, 350],
+      "position": [
+        400,
+        350
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -75,7 +93,10 @@
       "name": "Check MySQL Health",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 50],
+      "position": [
+        650,
+        50
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://coastcapital-db-maintenance:8080/health",
@@ -91,7 +112,10 @@
       "name": "Check Finance API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 250],
+      "position": [
+        650,
+        250
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://coast_capital_finance:5000/health",
@@ -106,7 +130,10 @@
       "name": "Check HomeLab API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 350],
+      "position": [
+        650,
+        350
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://coastcapital-homelab:5000/health",
@@ -121,7 +148,10 @@
       "name": "Check Assistant API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 450],
+      "position": [
+        650,
+        450
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://coastcapital-assistant:5000/health",
@@ -136,7 +166,10 @@
       "name": "Check Sports API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [650, 550],
+      "position": [
+        650,
+        550
+      ],
       "parameters": {
         "method": "GET",
         "url": "http://coastcapital-sports:5000/health",
@@ -151,7 +184,10 @@
       "name": "Aggregate Results",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [880, 350],
+      "position": [
+        880,
+        350
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -172,16 +208,26 @@
       "name": "Any Failures?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 350],
+      "position": [
+        1100,
+        350
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-fail",
               "leftValue": "={{ $json.statusCode }}",
               "rightValue": 200,
-              "operator": { "type": "number", "operation": "notEquals" }
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "or"
@@ -193,7 +239,10 @@
       "name": "Slack - Service Down Alert",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1320, 300],
+      "position": [
+        1320,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -213,13 +262,16 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1540, 300],
+      "position": [
+        1540,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"homelab_health_check\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"homelab\"}",
+        "jsonBody": "={\"workflow_name\": \"Platform - Health Check (5 min)\", \"module\": \"homelab\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
@@ -231,51 +283,135 @@
     "Every 5 Minutes": {
       "main": [
         [
-          { "node": "Job Started", "type": "main", "index": 0 }
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Webhook Trigger": {
       "main": [
         [
-          { "node": "Job Started", "type": "main", "index": 0 }
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started": {
       "main": [
         [
-          { "node": "Check MySQL Health", "type": "main", "index": 0 },
-          { "node": "Check Finance API", "type": "main", "index": 0 },
-          { "node": "Check HomeLab API", "type": "main", "index": 0 },
-          { "node": "Check Assistant API", "type": "main", "index": 0 },
-          { "node": "Check Sports API", "type": "main", "index": 0 }
+          {
+            "node": "Check MySQL Health",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Finance API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check HomeLab API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Assistant API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Sports API",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Check MySQL Health": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Finance API": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check HomeLab API": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Assistant API": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Sports API": {
-      "main": [[{ "node": "Aggregate Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate Results": {
-      "main": [[{ "node": "Any Failures?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Any Failures?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Any Failures?": {
       "main": [
         [
-          { "node": "Slack - Service Down Alert", "type": "main", "index": 0 },
-          { "node": "Call Error Handler", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Service Down Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]

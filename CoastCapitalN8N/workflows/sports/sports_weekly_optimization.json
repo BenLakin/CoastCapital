@@ -3,10 +3,18 @@
   "name": "Sports - Weekly Model Optimization",
   "active": true,
   "versionId": "1",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "7", "name": "sports" },
-    { "id": "3", "name": "weekly" }
+    {
+      "id": "7",
+      "name": "sports"
+    },
+    {
+      "id": "3",
+      "name": "weekly"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,10 +29,18 @@
       "name": "Tuesday 3:00 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "0 3 * * 2" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 3 * * 2"
+            }
+          ]
         }
       }
     },
@@ -33,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "sports-weekly-optimization-webhook",
       "parameters": {
         "path": "/webhook/sports-weekly-optimization",
@@ -47,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 200],
+      "position": [
+        470,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -56,7 +78,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -64,7 +89,10 @@
       "name": "POST /weekly-optimization",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 200],
+      "position": [
+        690,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/weekly-optimization",
@@ -73,10 +101,15 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\"sports\": [\"nfl\", \"ncaa_mbb\", \"mlb\"], \"bankroll\": 50, \"max_pct\": 0.5, \"force_refit\": true}",
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-sports-webhook", "name": "Sports Webhook Auth" }
+        "httpHeaderAuth": {
+          "id": "cred-sports-webhook",
+          "name": "Sports Webhook Auth"
+        }
       }
     },
     {
@@ -84,16 +117,26 @@
       "name": "Optimization Success?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 200],
+      "position": [
+        910,
+        200
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-ok",
               "leftValue": "={{ $json.status }}",
               "rightValue": "error",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -105,7 +148,10 @@
       "name": "Slack - Weekly Optimization",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1130, 100],
+      "position": [
+        1130,
+        100
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -114,7 +160,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -122,16 +171,22 @@
       "name": "Slack - Optimization Failed",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1130, 350],
+      "position": [
+        1130,
+        350
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[Sports] :warning: Weekly sports optimization failed: {{ $json.error || 'Unknown error' }}",
+        "text": "=[Sports] :x: *Sports - Weekly Model Optimization* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -139,38 +194,95 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1350, 350],
+      "position": [
+        1350,
+        350
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"Sports - Weekly Model Optimization\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"sports\"}",
-        "options": { "timeout": 10000 }
+        "jsonBody": "={\"workflow_name\": \"Sports - Weekly Model Optimization\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
       }
     }
   ],
   "connections": {
     "Tuesday 3:00 AM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "POST /weekly-optimization", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /weekly-optimization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /weekly-optimization": {
-      "main": [[{ "node": "Optimization Success?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Optimization Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Optimization Success?": {
       "main": [
-        [{ "node": "Slack - Weekly Optimization", "type": "main", "index": 0 }],
-        [{ "node": "Slack - Optimization Failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Slack - Weekly Optimization",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Optimization Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Slack - Optimization Failed": {
-      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

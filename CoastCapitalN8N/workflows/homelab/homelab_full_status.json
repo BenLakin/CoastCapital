@@ -3,10 +3,18 @@
   "name": "HomeLab - Full Status Sweep (All 8 Service Pipelines)",
   "active": true,
   "versionId": "1",
-  "meta": { "instanceId": "coastcapital-n8n" },
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
   "tags": [
-    { "id": "3", "name": "homelab" },
-    { "id": "4", "name": "daily" }
+    {
+      "id": "3",
+      "name": "homelab"
+    },
+    {
+      "id": "4",
+      "name": "daily"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -21,10 +29,18 @@
       "name": "Daily 7:30 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "30 7 * * *" }]
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 7 * * *"
+            }
+          ]
         }
       }
     },
@@ -33,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "homelab-full-status",
       "parameters": {
         "path": "homelab-full-status",
@@ -46,7 +65,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -55,7 +77,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -63,16 +88,24 @@
       "name": "POST /full-status",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 300],
+      "position": [
+        690,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-homelab:5000/api/pipeline/full-status",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "cred-homelab-api", "name": "HomeLab API Key" }
+        "httpHeaderAuth": {
+          "id": "cred-homelab-api",
+          "name": "HomeLab API Key"
+        }
       }
     },
     {
@@ -80,7 +113,10 @@
       "name": "Status OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 300],
+      "position": [
+        910,
+        300
+      ],
       "parameters": {
         "conditions": {
           "conditions": [
@@ -88,7 +124,10 @@
               "id": "cond-ok",
               "leftValue": "={{ $json.status }}",
               "rightValue": "error",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -100,9 +139,12 @@
       "name": "Build Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1130, 200],
+      "position": [
+        1130,
+        200
+      ],
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconst lines = ['[HomeLab] Full Status Sweep — ' + new Date().toLocaleString('en-US', {timeZone: 'America/New_York'})];\nlines.push('─'.repeat(40));\n\nconst services = d.services || d.results || [];\nif (Array.isArray(services)) {\n  for (const svc of services) {\n    const icon = svc.status === 'ok' || svc.status === 'healthy' ? '✅' : '⚠️';\n    lines.push(`${icon} ${svc.name || svc.service}: ${svc.status || 'unknown'}`);\n  }\n} else {\n  lines.push('Services data: ' + JSON.stringify(d).substring(0, 200));\n}\n\nlines.push('─'.repeat(40));\nreturn [{ json: { message: lines.join('\\n') } }];"
+        "jsCode": "const d = $input.first().json;\nconst lines = ['[HomeLab] Full Status Sweep \u2014 ' + new Date().toLocaleString('en-US', {timeZone: 'America/New_York'})];\nlines.push('\u2500'.repeat(40));\n\nconst services = d.services || d.results || [];\nif (Array.isArray(services)) {\n  for (const svc of services) {\n    const icon = svc.status === 'ok' || svc.status === 'healthy' ? '\u2705' : '\u26a0\ufe0f';\n    lines.push(`${icon} ${svc.name || svc.service}: ${svc.status || 'unknown'}`);\n  }\n} else {\n  lines.push('Services data: ' + JSON.stringify(d).substring(0, 200));\n}\n\nlines.push('\u2500'.repeat(40));\nreturn [{ json: { message: lines.join('\\n') } }];"
       }
     },
     {
@@ -110,7 +152,10 @@
       "name": "Slack - Full Status Summary",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1350, 200],
+      "position": [
+        1350,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -119,7 +164,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -127,16 +175,22 @@
       "name": "Slack - Sweep Failed",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1130, 400],
+      "position": [
+        1130,
+        400
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[HomeLab] :warning: Full status sweep failed: {{ $json.error || $json.message || 'Unknown error' }}",
+        "text": "=[HomeLab] :x: *HomeLab - Full Status Sweep (All 8 Service Pipelines)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -144,41 +198,106 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1350, 400],
+      "position": [
+        1350,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"homelab_full_status\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"module\": \"homelab\"}",
-        "options": { "timeout": 10000 }
+        "jsonBody": "={\"workflow_name\": \"HomeLab - Full Status Sweep (All 8 Service Pipelines)\", \"module\": \"homelab\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
       }
     }
   ],
   "connections": {
     "Daily 7:30 AM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "POST /full-status", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /full-status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /full-status": {
-      "main": [[{ "node": "Status OK?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Status OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Status OK?": {
       "main": [
-        [{ "node": "Build Summary", "type": "main", "index": 0 }],
-        [{ "node": "Slack - Sweep Failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Sweep Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Summary": {
-      "main": [[{ "node": "Slack - Full Status Summary", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Slack - Full Status Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Slack - Sweep Failed": {
-      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

@@ -7,8 +7,14 @@
     "instanceId": "coastcapital-n8n"
   },
   "tags": [
-    { "id": "6", "name": "assistant" },
-    { "id": "5", "name": "monitoring" }
+    {
+      "id": "6",
+      "name": "assistant"
+    },
+    {
+      "id": "5",
+      "name": "monitoring"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -23,7 +29,10 @@
       "name": "Every 30 Minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -40,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "assistant-tasks-webhook",
       "parameters": {
         "path": "/webhook/assistant-tasks",
@@ -54,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [420, 300],
+      "position": [
+        420,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -74,13 +89,18 @@
       "name": "POST /api/sync/todoist",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [620, 200],
+      "position": [
+        620,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_assistant:5002/api/sync/todoist",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -95,13 +115,18 @@
       "name": "POST /api/sync/notion",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [620, 400],
+      "position": [
+        620,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_assistant:5002/api/sync/notion",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -116,7 +141,10 @@
       "name": "Aggregate Sync Results",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [840, 300],
+      "position": [
+        840,
+        300
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -137,16 +165,26 @@
       "name": "Sync Errors?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1060, 300],
+      "position": [
+        1060,
+        300
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-err",
               "leftValue": "={{ $json.error }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
           ],
           "combinator": "or"
@@ -158,12 +196,15 @@
       "name": "Slack - Sync Error",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1280, 200],
+      "position": [
+        1280,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[Assistant] :warning: Task sync error at {{ $now.toISO() }}: {{ $json.error }}",
+        "text": "=[Assistant] :x: *Assistant - Task Sync (30 min)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -178,13 +219,16 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1500, 200],
+      "position": [
+        1500,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"assistant_task_sync\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"assistant\"}",
+        "jsonBody": "={\"workflow_name\": \"Assistant - Task Sync (30 min)\", \"module\": \"assistant\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
@@ -196,7 +240,10 @@
       "name": "Sync OK",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1280, 400],
+      "position": [
+        1280,
+        400
+      ],
       "parameters": {}
     }
   ],
@@ -204,41 +251,95 @@
     "Every 30 Minutes": {
       "main": [
         [
-          { "node": "Job Started", "type": "main", "index": 0 }
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Webhook Trigger": {
       "main": [
         [
-          { "node": "Job Started", "type": "main", "index": 0 }
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Job Started": {
       "main": [
         [
-          { "node": "POST /api/sync/todoist", "type": "main", "index": 0 },
-          { "node": "POST /api/sync/notion", "type": "main", "index": 0 }
+          {
+            "node": "POST /api/sync/todoist",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST /api/sync/notion",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "POST /api/sync/todoist": {
-      "main": [[{ "node": "Aggregate Sync Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Sync Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /api/sync/notion": {
-      "main": [[{ "node": "Aggregate Sync Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Sync Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate Sync Results": {
-      "main": [[{ "node": "Sync Errors?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Sync Errors?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Sync Errors?": {
       "main": [
         [
-          { "node": "Slack - Sync Error", "type": "main", "index": 0 },
-          { "node": "Call Error Handler", "type": "main", "index": 0 }
+          {
+            "node": "Slack - Sync Error",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
         ],
-        [{ "node": "Sync OK", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Sync OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   }

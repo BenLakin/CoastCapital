@@ -7,8 +7,14 @@
     "instanceId": "coastcapital-n8n"
   },
   "tags": [
-    { "id": "7", "name": "sports" },
-    { "id": "8", "name": "nfl" }
+    {
+      "id": "7",
+      "name": "sports"
+    },
+    {
+      "id": "8",
+      "name": "nfl"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -23,7 +29,10 @@
       "name": "NFL Game Nights 11:30 PM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -40,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "sports-nfl-game-ingest-webhook",
       "parameters": {
         "path": "/webhook/sports-nfl-game-ingest",
@@ -54,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 200],
+      "position": [
+        470,
+        200
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -63,7 +78,10 @@
         "otherOptions": {}
       },
       "credentials": {
-        "slackApi": { "id": "cred-slack", "name": "CoastCapital Slack" }
+        "slackApi": {
+          "id": "cred-slack",
+          "name": "CoastCapital Slack"
+        }
       }
     },
     {
@@ -71,16 +89,26 @@
       "name": "Is NFL Season Active?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [690, 200],
+      "position": [
+        690,
+        200
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-month",
               "leftValue": "={{ $now.month }}",
               "rightValue": 3,
-              "operator": { "type": "number", "operation": "gte" }
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
             }
           ],
           "combinator": "and"
@@ -92,7 +120,10 @@
       "name": "POST /nfl/ingest-games",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [910, 100],
+      "position": [
+        910,
+        100
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/nfl/ingest-games",
@@ -101,10 +132,15 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "date", "value": "={{ $now.format('yyyy-MM-dd') }}" }
+            {
+              "name": "date",
+              "value": "={{ $now.format('yyyy-MM-dd') }}"
+            }
           ]
         },
-        "options": { "timeout": 120000 }
+        "options": {
+          "timeout": 120000
+        }
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -118,16 +154,26 @@
       "name": "Ingest Success?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1130, 100],
+      "position": [
+        1130,
+        100
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-ok",
               "leftValue": "={{ $json.status }}",
               "rightValue": "success",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -139,13 +185,18 @@
       "name": "POST /nfl/update-ratings",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1350, 0],
+      "position": [
+        1350,
+        0
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/nfl/update-ratings",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -159,13 +210,18 @@
       "name": "POST /nfl/grade-picks",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1350, 150],
+      "position": [
+        1350,
+        150
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-sports:5000/nfl/grade-picks",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "credentials": {
         "httpHeaderAuth": {
@@ -179,7 +235,10 @@
       "name": "Slack - Game Results",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1570, 75],
+      "position": [
+        1570,
+        75
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -199,12 +258,15 @@
       "name": "Slack - Ingest Failed",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1350, 300],
+      "position": [
+        1350,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[Sports] :warning: NFL game ingest failed for {{ $now.format('yyyy-MM-dd') }}: {{ $json.error || 'Unknown' }}",
+        "text": "=[Sports] :x: *Sports NFL - Game Results Ingest* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -219,14 +281,19 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1570, 300],
+      "position": [
+        1570,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"Sports NFL - Game Results Ingest\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"sports\"}",
-        "options": { "timeout": 10000 }
+        "jsonBody": "={\"workflow_name\": \"Sports NFL - Game Results Ingest\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
       }
     },
     {
@@ -234,46 +301,131 @@
       "name": "Off-Season - Skip",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [910, 300],
+      "position": [
+        910,
+        300
+      ],
       "parameters": {}
     }
   ],
   "connections": {
     "NFL Game Nights 11:30 PM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "Is NFL Season Active?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Is NFL Season Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Is NFL Season Active?": {
       "main": [
-        [{ "node": "POST /nfl/ingest-games", "type": "main", "index": 0 }],
-        [{ "node": "Off-Season - Skip", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "POST /nfl/ingest-games",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Off-Season - Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "POST /nfl/ingest-games": {
-      "main": [[{ "node": "Ingest Success?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Ingest Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Ingest Success?": {
       "main": [
         [
-          { "node": "POST /nfl/update-ratings", "type": "main", "index": 0 },
-          { "node": "POST /nfl/grade-picks", "type": "main", "index": 0 }
+          {
+            "node": "POST /nfl/update-ratings",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "POST /nfl/grade-picks",
+            "type": "main",
+            "index": 0
+          }
         ],
-        [{ "node": "Slack - Ingest Failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Slack - Ingest Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "POST /nfl/update-ratings": {
-      "main": [[{ "node": "Slack - Game Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Slack - Game Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /nfl/grade-picks": {
-      "main": [[{ "node": "Slack - Game Results", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Slack - Game Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Slack - Ingest Failed": {
-      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

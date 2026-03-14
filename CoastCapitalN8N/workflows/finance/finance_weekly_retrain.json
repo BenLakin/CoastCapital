@@ -7,8 +7,14 @@
     "instanceId": "coastcapital-n8n"
   },
   "tags": [
-    { "id": "1", "name": "finance" },
-    { "id": "3", "name": "weekly" }
+    {
+      "id": "1",
+      "name": "finance"
+    },
+    {
+      "id": "3",
+      "name": "weekly"
+    }
   ],
   "settings": {
     "executionOrder": "v1",
@@ -23,7 +29,10 @@
       "name": "Sunday 2:00 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -40,7 +49,10 @@
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 500],
+      "position": [
+        250,
+        500
+      ],
       "webhookId": "finance-weekly-retrain",
       "parameters": {
         "path": "/webhook/finance-retrain",
@@ -54,7 +66,10 @@
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [470, 300],
+      "position": [
+        470,
+        300
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -74,7 +89,10 @@
       "name": "POST /n8n/retrain-all",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [690, 300],
+      "position": [
+        690,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_finance:5000/n8n/retrain-all",
@@ -96,16 +114,26 @@
       "name": "Check Success",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [910, 300],
+      "position": [
+        910,
+        300
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "cond-status",
               "leftValue": "={{ $json.status }}",
               "rightValue": "success",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
@@ -117,13 +145,21 @@
       "name": "Log Retrain Success",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
-      "position": [1130, 200],
+      "position": [
+        1130,
+        200
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
         "assignments": {
           "assignments": [
-            { "id": "result", "name": "result", "value": "=[Finance] Weekly retrain completed successfully. Models retrained: {{ $json.models_retrained || 'all' }}", "type": "string" }
+            {
+              "id": "result",
+              "name": "result",
+              "value": "=[Finance] Weekly retrain completed successfully. Models retrained: {{ $json.models_retrained || 'all' }}",
+              "type": "string"
+            }
           ]
         }
       }
@@ -133,12 +169,15 @@
       "name": "Slack - Retrain Failed",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.1,
-      "position": [1130, 400],
+      "position": [
+        1130,
+        400
+      ],
       "parameters": {
         "resource": "message",
         "operation": "post",
         "channel": "#coast-action-needed",
-        "text": "=[Finance] :rotating_light: Weekly model retrain FAILED\nError: {{ $json.error || 'Unknown error' }}",
+        "text": "=[Finance] :x: *Finance - Weekly Model Retrain* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -153,13 +192,16 @@
       "name": "Call Error Handler",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1350, 400],
+      "position": [
+        1350,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \"workflow_name\": \"Finance - Weekly Model Retrain\", \"error_message\": \"{{ $json.error || $json.message }}\", \"module\": \"finance\" }",
+        "jsonBody": "={\"workflow_name\": \"Finance - Weekly Model Retrain\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
@@ -168,25 +210,77 @@
   ],
   "connections": {
     "Sunday 2:00 AM ET": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Webhook Trigger": {
-      "main": [[{ "node": "Job Started", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Job Started": {
-      "main": [[{ "node": "POST /n8n/retrain-all", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "POST /n8n/retrain-all",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "POST /n8n/retrain-all": {
-      "main": [[{ "node": "Check Success", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Check Success": {
       "main": [
-        [{ "node": "Log Retrain Success", "type": "main", "index": 0 }],
-        [{ "node": "Slack - Retrain Failed", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Log Retrain Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Retrain Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Slack - Retrain Failed": {
-      "main": [[{ "node": "Call Error Handler", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }
