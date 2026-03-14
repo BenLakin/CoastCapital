@@ -37,8 +37,6 @@ services:
       # Git credentials (for auto-MR)
       GIT_USER_NAME: ${GIT_USER_NAME:-CoastCapital Bot}
       GIT_USER_EMAIL: ${GIT_USER_EMAIL:-bot@coastcapital.local}
-      # Module API key (shared across Finance, Sports, HomeLab, Assistant)
-      API_KEY: ${API_KEY}
       # Docker socket (for rebuild workflow)
       DOCKER_HOST: unix:///var/run/docker.sock
     ports:

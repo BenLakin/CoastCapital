@@ -34,12 +34,6 @@ from utils.metrics import init_metrics
 logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
-# Background job tracker (for long-running backfills)
-# ---------------------------------------------------------------------------
-
-_jobs: dict = {}  # job_id -> {"status": str, "result": dict | None, "error": str | None}
-
-# ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
 
@@ -129,14 +123,13 @@ def update():
 def backfill():
     """Backfill historical data for one or all sports.
 
-    Runs in a background thread and returns a job_id immediately.
-    Poll GET /backfill/status/<job_id> for progress.
-
     Body (JSON):
       sport       — "nfl" | "ncaa_mbb" | "mlb" | "all"  (default: "all")
       start_date  — "YYYY-MM-DD"  (required unless season is provided)
       end_date    — "YYYY-MM-DD"  (required unless season is provided)
       season      — int year, e.g. 2023 (used to derive start/end if omitted)
+
+    Returns aggregated pipeline results or a 500 on failure.
     """
     payload = request.get_json(silent=True) or {}
     sport = payload.get("sport", "all")
@@ -147,43 +140,19 @@ def backfill():
         "POST /backfill  sport=%s  start=%s  end=%s  season=%s",
         sport, start_date, end_date, season,
     )
-
-    job_id = str(uuid.uuid4())[:8]
-    _jobs[job_id] = {"status": "running", "result": None, "error": None}
-
-    def _run():
-        try:
-            result = run_backfill_pipeline(
-                sport=sport,
-                start_date=start_date,
-                end_date=end_date,
-                season=season,
-            )
-            _jobs[job_id]["status"] = "completed"
-            _jobs[job_id]["result"] = result
-            logger.info("Backfill job %s completed", job_id)
-        except ValueError as exc:
-            _jobs[job_id]["status"] = "failed"
-            _jobs[job_id]["error"] = str(exc)
-            logger.error("Backfill job %s failed: %s", job_id, exc)
-        except Exception as exc:
-            _jobs[job_id]["status"] = "failed"
-            _jobs[job_id]["error"] = str(exc)
-            logger.error("Backfill job %s failed: %s\n%s", job_id, exc, traceback.format_exc())
-
-    thread = threading.Thread(target=_run, daemon=True)
-    thread.start()
-
-    return jsonify({"success": True, "job_id": job_id, "status": "running"}), 202
-
-
-@app.route("/backfill/status/<job_id>", methods=["GET"])
-def backfill_status(job_id):
-    """Poll backfill job status."""
-    job = _jobs.get(job_id)
-    if not job:
-        return _error(f"Unknown job_id: {job_id}", status=404)
-    return jsonify({"job_id": job_id, **job})
+    try:
+        result = run_backfill_pipeline(
+            sport=sport,
+            start_date=start_date,
+            end_date=end_date,
+            season=season,
+        )
+        return jsonify(result)
+    except ValueError as exc:
+        return _error(str(exc), status=400)
+    except Exception as exc:
+        logger.error("Backfill pipeline failed: %s\n%s", exc, traceback.format_exc())
+        return _error(f"Backfill pipeline failed: {exc}")
 
 
 @app.route("/materialize-features", methods=["POST"])
