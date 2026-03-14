@@ -80,8 +80,10 @@ def _build_ground_truth_section() -> str:
                         params = json.loads(params)
                     except json.JSONDecodeError:
                         params = {}
+                # Truncate and sanitize user text to prevent prompt injection
+                safe_text = ex["user_text"][:120].replace('"', "'")
                 lines.append(
-                    f'  Input: "{ex["user_text"]}" -> '
+                    f'  Input: "{safe_text}" -> '
                     f'{{"intent": "{ex["predicted_intent"]}", "params": {json.dumps(params)}}}'
                 )
 
@@ -90,8 +92,9 @@ def _build_ground_truth_section() -> str:
             for ex in bad:
                 correct = ex.get("correct_intent") or "unknown"
                 note = ex.get("feedback_note") or ""
+                safe_text = ex["user_text"][:120].replace('"', "'")
                 line = (
-                    f'  Input: "{ex["user_text"]}" -> '
+                    f'  Input: "{safe_text}" -> '
                     f'predicted "{ex["predicted_intent"]}" but correct was "{correct}"'
                 )
                 if note:

@@ -44,8 +44,8 @@ FORTUNE_500_TICKERS = [
     # Energy
     "XOM","CVX","COP","SLB","EOG","MPC","PSX","VLO","HES","OXY",
     # Consumer (Staples + Discretionary)
-    "WMT","HD","MCD","COST","TGT","NKE","SBUX","DG","LOW","AMZN",
-    "F","GM","FORD","TJX","ROST","YUM","CMG","DHI","LEN","PG",
+    "WMT","HD","MCD","COST","TGT","NKE","SBUX","DG","LOW",
+    "F","GM","TJX","ROST","YUM","CMG","DHI","LEN","PG",
     "KO","PEP","PM","MO","CL","KMB","GIS","K","HSY","MDLZ",
     # Industrial
     "CAT","HON","RTX","GE","UPS","FDX","BA","LMT","NOC","DE",
@@ -319,7 +319,7 @@ def fortune500_movers():
             "gainers":   gainers,
             "losers":    losers,
             "big_noise": big_noise[:15],
-            "as_of":     datetime.utcnow().strftime("%H:%M UTC"),
+            "as_of":     datetime.now(timezone.utc).strftime("%H:%M UTC"),
             "total_tracked": len(rows),
         }
 
@@ -364,7 +364,7 @@ def market_highlights():
             "indices": indices,
             "pct_gainers": pct_gainers, "pct_losers": pct_losers,
             "mcap_movers": mcap_movers[:8],
-            "as_of": datetime.utcnow().strftime("%H:%M UTC"),
+            "as_of": datetime.now(timezone.utc).strftime("%H:%M UTC"),
         }
         if has_movers:
             _cache_set("highlights", result, ttl=300)

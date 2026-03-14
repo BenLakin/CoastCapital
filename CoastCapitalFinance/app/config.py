@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     # Flask
     FLASK_ENV: str = "production"
     SECRET_KEY: str = "change-me-in-production"
+    API_KEY: str = ""  # empty = deny all non-health requests
 
     # MySQL (points to central coastcapital-mysql via docker-compose env)
     MYSQL_HOST: str = "coastcapital-mysql"

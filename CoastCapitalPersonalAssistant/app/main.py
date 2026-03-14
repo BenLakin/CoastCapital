@@ -68,7 +68,7 @@ def require_api_key(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         key = request.headers.get("X-API-Key") or request.args.get("api_key")
-        if key != Config.API_KEY:
+        if not Config.API_KEY or key != Config.API_KEY:
             return jsonify({"success": False, "error": "Unauthorized"}), 401
         return f(*args, **kwargs)
     return decorated

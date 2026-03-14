@@ -221,8 +221,12 @@ def build_feature_matrix(
             "yield_curve_2_10": m.yield_curve_2_10,
             "treasury_10y": m.treasury_10y,
             "sp500_return_1d": m.sp500_return_1d,
-            "spy_return_1d": (m.spy_close or 0),
+            "spy_close": (m.spy_close or 0),
         } for m in macros]).set_index("date")
+
+        # Compute actual SPY 1-day return from close prices (avoid raw price as feature)
+        macro_df["spy_return_1d"] = macro_df["spy_close"].pct_change().fillna(0)
+        macro_df.drop(columns=["spy_close"], inplace=True)
 
         macro_df["vix_regime"] = pd.cut(
             macro_df["vix"].fillna(20),

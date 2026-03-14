@@ -82,8 +82,9 @@ class AssistantAgent:
             today=datetime.now().strftime("%A, %B %d, %Y"),
         )
 
-        # Agentic loop — keep going until no more tool calls
-        while True:
+        # Agentic loop — keep going until no more tool calls (max 15 iterations)
+        MAX_ITERATIONS = 15
+        for _iteration in range(MAX_ITERATIONS):
             resp = self.client.messages.create(
                 model=self.model,
                 max_tokens=2048,
@@ -113,6 +114,8 @@ class AssistantAgent:
             else:
                 # Unexpected stop reason — return whatever text we have
                 return self._extract_text(resp)
+
+        return self._extract_text(resp)
 
     # ── Tool Definitions ──────────────────────────────────────────────────────
 

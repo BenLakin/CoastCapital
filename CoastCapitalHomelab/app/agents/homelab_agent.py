@@ -74,7 +74,8 @@ class HomeLabAgent:
         messages = list(history) + [{"role": "user", "content": message}]
         system = SYSTEM_PROMPT.format(today=datetime.now().strftime("%A, %B %d, %Y"))
 
-        while True:
+        MAX_ITERATIONS = 15
+        for _iteration in range(MAX_ITERATIONS):
             resp = self.client.messages.create(
                 model=self.model,
                 max_tokens=4096,
@@ -100,6 +101,8 @@ class HomeLabAgent:
                 messages.append({"role": "user", "content": tool_results})
             else:
                 return self._extract_text(resp)
+
+        return self._extract_text(resp)
 
     # ── Tool Definitions ──────────────────────────────────────────────────────
 

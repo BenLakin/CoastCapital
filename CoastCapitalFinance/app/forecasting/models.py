@@ -17,9 +17,8 @@ import time as _time
 import joblib
 import numpy as np
 import pandas as pd
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
-from dataclasses import dataclass, field
 from itertools import product as itertools_product
 
 import lightgbm as lgb
@@ -499,20 +498,17 @@ class StockForecaster:
             oof_preds = np.zeros((len(X_scaled), 4))  # 4 base models
             oof_mask = np.zeros(len(X_scaled), dtype=bool)
 
-            # Train final base models on full data
-            lgbm_model = lgb.LGBMRegressor(**lgbm_params)
-            xgb_model = xgb.XGBRegressor(**xgb_params)
-            cat_model = CatBoostRegressor(**cat_params)
-            hist_model = HistGradientBoostingRegressor(**hist_params)
+            # Generate OOF predictions for meta-learner training.
+            # Keep the last fold's models as production models so base model
+            # predictions at inference come from the same distribution the
+            # meta-learner was trained on (avoids train/inference mismatch).
+            last_fold_models = [None, None, None, None]
 
-            base_models = [lgbm_model, xgb_model, cat_model, hist_model]
-
-            # Generate OOF predictions for meta-learner training
             for fold_idx, (train_idx, val_idx) in enumerate(tscv.split(X_scaled)):
                 X_tr, X_val = X_scaled[train_idx], X_scaled[val_idx]
                 y_tr, y_val = y[train_idx], y[val_idx]
 
-                # LightGBM
+                # LightGBM — use validation set for early stopping
                 fold_lgbm = lgb.LGBMRegressor(**lgbm_params)
                 fold_lgbm.fit(X_tr, y_tr,
                               eval_set=[(X_val, y_val)],
@@ -535,6 +531,7 @@ class StockForecaster:
                 oof_preds[val_idx, 3] = fold_hist.predict(X_val)
 
                 oof_mask[val_idx] = True
+                last_fold_models = [fold_lgbm, fold_xgb, fold_cat, fold_hist]
 
             # Train meta-learner on OOF predictions
             oof_X = oof_preds[oof_mask]
@@ -547,25 +544,28 @@ class StockForecaster:
             meta_pred = meta_model.predict(oof_X)
             calibration_residuals = np.abs(oof_y - meta_pred)
 
-            # Train final base models on ALL data
-            lgbm_model.fit(X_scaled, y,
-                           eval_set=[(X_scaled, y)],
-                           callbacks=[lgb.early_stopping(50, verbose=False), lgb.log_evaluation(-1)])
-            xgb_model.fit(X_scaled, y, verbose=False)
-            cat_model.fit(X_scaled, y, verbose=0)
-            hist_model.fit(X_scaled, y)
+            # Fallback: if data was too small for CV, train on all data
+            if last_fold_models[0] is None:
+                last_fold_models[0] = lgb.LGBMRegressor(**lgbm_params)
+                last_fold_models[0].fit(X_scaled, y, verbose=-1)
+                last_fold_models[1] = xgb.XGBRegressor(**xgb_params)
+                last_fold_models[1].fit(X_scaled, y, verbose=False)
+                last_fold_models[2] = CatBoostRegressor(**cat_params)
+                last_fold_models[2].fit(X_scaled, y, verbose=0)
+                last_fold_models[3] = HistGradientBoostingRegressor(**hist_params)
+                last_fold_models[3].fit(X_scaled, y)
 
-            # Store
+            # Store last-fold base models (same distribution as OOF predictions)
             self.models[h] = {
-                "base": [lgbm_model, xgb_model, cat_model, hist_model],
+                "base": last_fold_models,
                 "meta": meta_model,
                 "calibration_residuals": calibration_residuals,
             }
 
             # Extract aggregated feature importance (top 20)
-            feat_imp = lgbm_model.feature_importances_.copy()
+            feat_imp = last_fold_models[0].feature_importances_.copy()
             # Add XGBoost importance (normalized to same scale)
-            xgb_imp = xgb_model.feature_importances_
+            xgb_imp = last_fold_models[1].feature_importances_
             if xgb_imp.sum() > 0:
                 feat_imp += xgb_imp / xgb_imp.max() * feat_imp.max()
             top_idx = np.argsort(feat_imp)[-20:][::-1]
@@ -573,16 +573,13 @@ class StockForecaster:
                 self.feature_names[j]: round(float(feat_imp[j]), 2) for j in top_idx
             }
 
-            # Metrics
-            final_pred = self._stacked_predict_horizon(X_scaled, h)
-            rmse = float(np.sqrt(mean_squared_error(y, final_pred)))
-            dir_acc = float(np.mean(np.sign(final_pred) == np.sign(y)))
+            # Metrics — only report OOF metrics (honest, out-of-sample)
             oof_rmse = float(np.sqrt(mean_squared_error(oof_y, meta_pred)))
+            oof_dir_acc = float(np.mean(np.sign(meta_pred) == np.sign(oof_y)))
 
             all_metrics[f"{h}d"] = {
-                "train_rmse": rmse,
                 "oof_rmse": oof_rmse,
-                "train_directional_accuracy": dir_acc,
+                "oof_directional_accuracy": oof_dir_acc,
                 "n_samples": len(X_scaled),
                 "n_features": len(self.feature_names),
                 "meta_weights": meta_model.coef_.tolist(),
@@ -718,7 +715,7 @@ class StockForecaster:
             "hyperparams_used": self.hyperparams_used,
             "feature_importance": self.feature_importance,
             "model_version": MODEL_VERSION,
-            "saved_at": datetime.utcnow().isoformat(),
+            "saved_at": datetime.now(timezone.utc).isoformat(),
         }, path)
         logger.info("Model saved", ticker=self.ticker, path=path)
         return path

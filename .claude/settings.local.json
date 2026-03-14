@@ -44,7 +44,15 @@
       "Bash(python3 -m pytest tests/test_agent_dispatch.py -v)",
       "Bash(python3 -m pytest tests/test_agent_dispatch.py -v -o \"addopts=\")",
       "Bash(python3 -m pytest tests/ -q -o \"addopts=\")",
-      "Bash(python3 -m pytest tests/ -v -o \"addopts=\")"
+      "Bash(python3 -m pytest tests/ -v -o \"addopts=\")",
+      "Bash(docker exec:*)",
+      "Bash(python3 -m pytest tests/test_forecasting.py -q -o \"addopts=\" -k \"train\")",
+      "Bash(python3 -m pytest tests/test_forecasting.py -q -o \"addopts=\")",
+      "Bash(python3 -m pytest tests/test_forecasting.py::TestStockForecasterV3::test_multi_horizon_train -o \"addopts=\" -s)",
+      "Bash(python3 -m pytest tests/test_forecasting.py::TestDirectionLabel -o \"addopts=\" -s)",
+      "Bash(python3 -m pytest tests/test_forecasting.py::TestDirectionLabel -o \"addopts=\")",
+      "Bash(python3 -m pytest tests/test_model_routes.py -v -o \"addopts=\")",
+      "Bash(python3:*)"
     ]
   }
 }

@@ -89,10 +89,12 @@ class TestDirectionLabel:
     def test_thresholds(self):
         from app.forecasting.models import direction_label
         assert direction_label(0.01) == 2
-        assert direction_label(0.003) == 2
+        assert direction_label(0.004) == 2       # above threshold
+        assert direction_label(0.003) == 1       # at boundary = flat (strict >)
         assert direction_label(0.001) == 1
         assert direction_label(-0.01) == 0
-        assert direction_label(-0.003) == 0
+        assert direction_label(-0.004) == 0      # below threshold
+        assert direction_label(-0.003) == 1      # at boundary = flat (strict <)
         assert direction_label(0.0) == 1
 
 

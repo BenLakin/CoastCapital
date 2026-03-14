@@ -103,7 +103,7 @@ def cross_validate_model(
     skip_materialize: bool = False,
     preloaded_df=None,
 ) -> dict:
-    """K-fold cross-validate a SportsBinaryClassifier.
+    """Time-series cross-validate a SportsBinaryClassifier.
 
     Parameters
     ----------

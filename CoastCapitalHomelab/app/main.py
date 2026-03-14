@@ -16,6 +16,14 @@ from app.utils.metrics import init_metrics
 logger = get_logger(__name__)
 
 
+def _safe_int(value, default: int) -> int:
+    """Safely parse an integer from a request parameter."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def create_app() -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.secret_key = Config.SECRET_KEY
@@ -40,7 +48,7 @@ def create_app() -> Flask:
         @wraps(f)
         def decorated(*args, **kwargs):
             key = request.headers.get("X-API-Key") or request.args.get("api_key")
-            if Config.API_KEY and key != Config.API_KEY:
+            if not Config.API_KEY or key != Config.API_KEY:
                 return jsonify({"success": False, "error": "Unauthorized"}), 401
             return f(*args, **kwargs)
         return decorated
@@ -123,7 +131,7 @@ def create_app() -> Flask:
     @app.route("/api/pipeline/system/history", methods=["GET"])
     @require_api_key
     def pipeline_system_history():
-        limit = int(request.args.get("limit", 24))
+        limit = _safe_int(request.args.get("limit", 24), 24)
         machine_name = request.args.get("machine_name")  # optional filter
         return jsonify({"history": get_system().get_history(limit=limit, machine_name=machine_name)})
 
@@ -172,7 +180,7 @@ def create_app() -> Flask:
     @app.route("/api/pipeline/plex/recent", methods=["GET"])
     @require_api_key
     def pipeline_plex_recent():
-        limit = int(request.args.get("limit", 10))
+        limit = _safe_int(request.args.get("limit", 10), 10)
         return jsonify({"recent": get_plex().get_recent(limit=limit)})
 
     @app.route("/api/pipeline/homeassistant", methods=["GET", "POST"])
@@ -248,13 +256,13 @@ def create_app() -> Flask:
     @app.route("/api/pipeline/portainer", methods=["GET", "POST"])
     @require_api_key
     def pipeline_portainer():
-        endpoint_id = int(request.args.get("endpoint_id", 1))
+        endpoint_id = _safe_int(request.args.get("endpoint_id", 1), 1)
         return jsonify(get_portainer().get_summary(endpoint_id=endpoint_id))
 
     @app.route("/api/pipeline/portainer/container/<container_id>/<action>", methods=["POST"])
     @require_api_key
     def pipeline_portainer_action(container_id, action):
-        endpoint_id = int(request.args.get("endpoint_id", 1))
+        endpoint_id = _safe_int(request.args.get("endpoint_id", 1), 1)
         result = get_portainer().container_action(endpoint_id, container_id, action)
         return jsonify(result)
 
@@ -313,7 +321,7 @@ def create_app() -> Flask:
     @app.route("/api/events", methods=["GET"])
     @require_api_key
     def get_events():
-        limit = int(request.args.get("limit", 50))
+        limit = _safe_int(request.args.get("limit", 50), 50)
         source = request.args.get("source")
         severity = request.args.get("severity")
         try:

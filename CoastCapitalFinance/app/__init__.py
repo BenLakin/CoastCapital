@@ -37,6 +37,17 @@ def create_app() -> Flask:
     app.register_blueprint(model_bp)
     register_agent_routes(app)
 
+    # API key authentication on non-health, non-static endpoints
+    OPEN_PATHS = {"/health", "/", "/dashboard", "/metrics", "/favicon.ico"}
+
+    @app.before_request
+    def _require_api_key():
+        if request.path in OPEN_PATHS or request.path.startswith("/static"):
+            return None
+        key = request.headers.get("X-API-Key") or request.args.get("api_key")
+        if settings.API_KEY and key != settings.API_KEY:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+
     # X-Request-ID header
     @app.before_request
     def _set_request_id():

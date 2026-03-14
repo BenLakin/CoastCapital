@@ -9,7 +9,7 @@ Data Sources:
 """
 import time
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 import pandas as pd
 import numpy as np
@@ -31,7 +31,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 logger = get_logger(__name__)
 
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
-FRED_API_KEY = settings.FRED_API_KEY or "abcdef"  # FRED accepts any key for public series
+FRED_API_KEY = settings.FRED_API_KEY  # Set FRED_API_KEY in .env (free at fred.stlouisfed.org)
 
 
 # ---------------------------------------------------------------------------
@@ -288,7 +288,7 @@ def check_and_handle_splits(ticker: str, db: Session) -> list[dict]:
 
             _restate_prices_after_split(ticker, stock.stock_id, split_date, db)
             split_record.history_restated = True
-            split_record.restated_at = datetime.utcnow()
+            split_record.restated_at = datetime.now(timezone.utc)
 
             splits_found.append({"date": str(split_date), "ratio": ratio})
 
@@ -358,7 +358,7 @@ def fetch_and_store_news(
     articles_stored = 0
     llm_analyzed_count = 0
     max_llm_articles = settings.LLM_MAX_ARTICLES_PER_STOCK
-    cutoff = datetime.utcnow() - timedelta(days=days_back)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
 
     # Determine LLM provider for this ticker
     llm_provider = get_provider_for_ticker(ticker)
@@ -370,7 +370,7 @@ def fetch_and_store_news(
 
     for item in yf_news[:20]:
         published_ms = item.get("providerPublishTime", 0)
-        published_at = datetime.utcfromtimestamp(published_ms) if published_ms else datetime.utcnow()
+        published_at = datetime.fromtimestamp(published_ms, tz=timezone.utc) if published_ms else datetime.now(timezone.utc)
 
         if published_at < cutoff:
             continue
@@ -449,7 +449,7 @@ def _fetch_newsapi(
     max_llm_articles: int = 3,
 ) -> int:
     """Fetch articles from NewsAPI with parameterized LLM provider and article cap."""
-    from_date = (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+    from_date = (datetime.now(timezone.utc) - timedelta(days=days_back)).strftime("%Y-%m-%d")
     url = (
         f"https://newsapi.org/v2/everything"
         f"?q={ticker}+OR+\"{company_name}\""
@@ -472,9 +472,9 @@ def _fetch_newsapi(
     for article in data.get("articles", []):
         published_str = article.get("publishedAt", "")
         try:
-            published_at = datetime.fromisoformat(published_str.replace("Z", "+00:00")).replace(tzinfo=None)
+            published_at = datetime.fromisoformat(published_str.replace("Z", "+00:00"))
         except Exception:
-            published_at = datetime.utcnow()
+            published_at = datetime.now(timezone.utc)
 
         if published_at < cutoff:
             continue

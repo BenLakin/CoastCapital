@@ -43,15 +43,11 @@ def add_team_history_features(df):
         df[f"{side}_margin_lag_1"] = df.groupby(team_col)[margin_col].shift(1)
         df[f"{side}_score_roll_3"] = (
             df.groupby(team_col)[score_col]
-            .rolling(3, min_periods=1)
-            .mean()
-            .reset_index(level=0, drop=True)
+            .transform(lambda s: s.shift(1).rolling(3, min_periods=1).mean())
         )
         df[f"{side}_margin_roll_3"] = (
             df.groupby(team_col)[margin_col]
-            .rolling(3, min_periods=1)
-            .mean()
-            .reset_index(level=0, drop=True)
+            .transform(lambda s: s.shift(1).rolling(3, min_periods=1).mean())
         )
         last_game_date = df.groupby(team_col)["game_date"].shift(1)
         df[f"{side}_rest_days"] = (df["game_date"] - last_game_date).dt.days

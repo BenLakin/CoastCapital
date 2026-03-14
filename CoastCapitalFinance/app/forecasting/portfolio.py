@@ -249,9 +249,9 @@ def monte_carlo_simulation(
     cov_daily = cov_matrix.loc[valid, valid].values
 
     # Simulate paths
-    np.random.seed(42)
+    rng = np.random.default_rng()
     # shape: (n_paths, holding_days, n_assets)
-    simulated_returns = np.random.multivariate_normal(
+    simulated_returns = rng.multivariate_normal(
         mean_daily, cov_daily, size=(n_paths, holding_days)
     )
 

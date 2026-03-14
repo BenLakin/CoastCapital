@@ -1,6 +1,6 @@
 """Tests for model registry: CRUD, promotion, sequence numbers, one-champion invariant."""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
 
 
@@ -87,7 +87,7 @@ class TestModelPromotion:
         # Simulate promotion
         old_champion.status = "archived"
         new_candidate.status = "champion"
-        new_candidate.promoted_at = datetime.utcnow()
+        new_candidate.promoted_at = datetime.now(timezone.utc)
         new_candidate.promoted_from_id = old_champion.model_id
 
         assert old_champion.status == "archived"

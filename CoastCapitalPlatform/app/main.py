@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Header, Request
+from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -79,8 +79,8 @@ templates = Jinja2Templates(directory=str(_app_dir / "templates"))
 # -- Auth ---------------------------------------------------------------------
 
 def verify_api_key(x_api_key: str = Header(None)):
-    """Verify API key if PLATFORM_API_KEY is configured."""
-    if Config.PLATFORM_API_KEY and x_api_key != Config.PLATFORM_API_KEY:
+    """Verify API key. Denies all requests if PLATFORM_API_KEY is not set."""
+    if not Config.PLATFORM_API_KEY or x_api_key != Config.PLATFORM_API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return x_api_key
 
@@ -208,6 +208,7 @@ async def api_get_predictions(
     limit: int = 50,
     offset: int = 0,
     vote: str | None = None,
+    _key: str = Depends(verify_api_key),
 ):
     """List recent predictions for the feedback dashboard."""
     from app.db import get_predictions
@@ -221,7 +222,7 @@ async def api_get_predictions(
 
 
 @app.get("/api/predictions/stats")
-async def api_prediction_stats():
+async def api_prediction_stats(_key: str = Depends(verify_api_key)):
     """Aggregate prediction accuracy stats."""
     from app.db import get_stats
     from decimal import Decimal
@@ -231,7 +232,7 @@ async def api_prediction_stats():
 
 
 @app.post("/api/predictions/{prediction_id}/vote")
-async def api_vote(prediction_id: int, req: VoteRequest):
+async def api_vote(prediction_id: int, req: VoteRequest, _key: str = Depends(verify_api_key)):
     """Submit an upvote or downvote on a prediction."""
     if req.vote not in ("up", "down"):
         raise HTTPException(status_code=400, detail="vote must be 'up' or 'down'")

@@ -1,8 +1,17 @@
 """Tests for model management API endpoints."""
 import pytest
 import json
+from contextlib import contextmanager
 from unittest.mock import patch, MagicMock
 from datetime import datetime
+
+
+def _mock_get_db(mock_db):
+    """Create a context-manager mock for get_db()."""
+    @contextmanager
+    def _ctx():
+        yield mock_db
+    return _ctx
 
 
 @pytest.fixture
@@ -31,18 +40,10 @@ class TestListTickers:
     def test_returns_tickers(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
-            mock_db.query.return_value.distinct.return_value.all.return_value = [("AAPL",)]
-            mock_db.query.return_value.filter.return_value.first.return_value = None
-
-            # Mock count
-            count_query = MagicMock()
-            count_query.filter.return_value.scalar.return_value = 1
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             # Handle multiple query calls
             def mock_query_side_effect(model):
-                from app.models.schema import FactModelRegistry
-                from sqlalchemy import func as sql_func
                 result = MagicMock()
                 result.distinct.return_value.all.return_value = [("AAPL",)]
                 result.filter.return_value.first.return_value = None
@@ -61,7 +62,7 @@ class TestTrainModel:
     def test_train_success(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             with patch("app.forecasting.models.train_model") as mock_train:
                 mock_train.return_value = {
@@ -100,7 +101,7 @@ class TestBacktestModel:
     def test_backtest_missing_model(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
             mock_db.query.return_value.filter.return_value.first.return_value = None
 
             resp = client.post("/api/v1/models/AAPL/backtest/999")
@@ -111,7 +112,7 @@ class TestBacktestModel:
 
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             mock_entry = MagicMock(spec=FactModelRegistry)
             mock_entry.hpo_method = "none"
@@ -135,7 +136,7 @@ class TestListVersions:
     def test_list_versions_empty(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
             mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = []
 
             resp = client.get("/api/v1/models/AAPL/versions")
@@ -148,7 +149,7 @@ class TestListVersions:
 
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             mock_entry = MagicMock(spec=FactModelRegistry)
             mock_entry.model_id = 1
@@ -182,7 +183,7 @@ class TestCompareModels:
     def test_compare_no_models(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
             mock_db.query.return_value.filter.return_value.first.return_value = None
             mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = None
 
@@ -198,7 +199,7 @@ class TestPromoteModel:
 
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             mock_entry = MagicMock(spec=FactModelRegistry)
             mock_entry.status = "candidate"
@@ -213,7 +214,7 @@ class TestPromoteModel:
     def test_promote_not_found(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
             mock_db.query.return_value.filter.return_value.first.return_value = None
 
             resp = client.post("/api/v1/models/AAPL/promote/999")
@@ -224,7 +225,7 @@ class TestAggregatePerformance:
     def test_performance_empty(self, client):
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
             mock_db.query.return_value.filter.return_value.all.return_value = []
 
             resp = client.get("/api/v1/models/performance")
@@ -237,7 +238,7 @@ class TestAggregatePerformance:
 
         with patch("app.routes.model_routes.get_db") as mock_get_db:
             mock_db = MagicMock()
-            mock_get_db.return_value = iter([mock_db])
+            mock_get_db.side_effect = _mock_get_db(mock_db)
 
             mock_champion = MagicMock(spec=FactModelRegistry)
             mock_champion.ticker = "AAPL"

@@ -63,7 +63,6 @@ def _compute_strategy_metrics(
 
     strategy_ann = float((1 + strategy_cum) ** ann_factor - 1)
     benchmark_ann = float((1 + benchmark_cum) ** ann_factor - 1)
-    alpha = strategy_ann - benchmark_ann
 
     # Beta
     if len(strategy_daily_returns) > 1:
@@ -71,6 +70,9 @@ def _compute_strategy_metrics(
         beta = float(cov[0, 1] / cov[1, 1]) if cov[1, 1] != 0 else 1.0
     else:
         beta = 1.0
+
+    # Jensen's alpha: strategy_return - (rf + beta * (benchmark_return - rf))
+    alpha = strategy_ann - (RISK_FREE_RATE + beta * (benchmark_ann - RISK_FREE_RATE))
 
     # Sharpe ratio
     rf_daily = RISK_FREE_RATE / 252
@@ -95,7 +97,9 @@ def _compute_strategy_metrics(
     win_rate = float(np.mean(winning_trades > 0)) if len(winning_trades) > 0 else 0.0
     avg_win = float(np.mean(winning_trades[winning_trades > 0])) if np.any(winning_trades > 0) else 0.0
     avg_loss = float(np.mean(winning_trades[winning_trades < 0])) if np.any(winning_trades < 0) else 0.0
-    profit_factor = float(abs(avg_win / avg_loss)) if avg_loss != 0 else 0.0
+    sum_wins = float(np.sum(winning_trades[winning_trades > 0])) if np.any(winning_trades > 0) else 0.0
+    sum_losses = float(np.sum(winning_trades[winning_trades < 0])) if np.any(winning_trades < 0) else 0.0
+    profit_factor = float(abs(sum_wins / sum_losses)) if sum_losses != 0 else 0.0
 
     # Error metrics
     rmse = float(np.sqrt(mean_squared_error(actual_returns, pred_returns)))

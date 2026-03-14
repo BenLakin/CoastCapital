@@ -147,11 +147,11 @@ def analyze_holding(
     after_tax_sell_now = tax_impact.after_tax_proceeds
 
     # Estimate expected value if held for 1 month (21 trading days ~ 30 calendar days)
-    # Use 5d predicted return extrapolated to ~4 weeks
+    # Compound 5d predicted return to ~4 weeks, or 1d return to 21 days
     if predicted_return_5d != 0:
-        expected_monthly_return = predicted_return_5d * (21 / 5)
+        expected_monthly_return = (1 + predicted_return_5d) ** (21 / 5) - 1
     else:
-        expected_monthly_return = predicted_return_1d * 21
+        expected_monthly_return = (1 + predicted_return_1d) ** 21 - 1
 
     expected_price_1m = current_price * (1 + expected_monthly_return)
 

@@ -14,7 +14,7 @@ Usage:
 import json
 import requests
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.config import settings
 from app.utils.logging_config import get_logger
@@ -180,7 +180,7 @@ Return ONLY the JSON, no other text."""
     # Try to parse JSON from the response
     result = _parse_json_response(raw)
     result["llm_model"] = _get_model_name(provider)
-    result["llm_processed_at"] = datetime.utcnow().isoformat()
+    result["llm_processed_at"] = datetime.now(timezone.utc).isoformat()
 
     logger.info("News analyzed", ticker=ticker, provider=provider or settings.LLM_PROVIDER_PRIMARY,
                 sentiment=result.get("sentiment_label"))
@@ -230,7 +230,7 @@ Return ONLY the JSON, no other text."""
     raw = _call_llm(prompt, provider=provider, max_tokens=1500)
     result = _parse_json_response(raw)
     result["llm_model"] = _get_model_name(provider)
-    result["llm_processed_at"] = datetime.utcnow().isoformat()
+    result["llm_processed_at"] = datetime.now(timezone.utc).isoformat()
 
     logger.info("Earnings analyzed", ticker=ticker, quarter=f"Q{fiscal_quarter} {fiscal_year}",
                 provider=provider or settings.LLM_PROVIDER_PRIMARY)

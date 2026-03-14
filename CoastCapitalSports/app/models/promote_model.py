@@ -156,7 +156,7 @@ def promote_model(
 
     Steps:
       1. Read candidate metadata for hyperparameters.
-      2. Run K-fold cross-validation to compute CV metrics.
+      2. Run time-series cross-validation to compute CV metrics.
       3. Log the candidate to ``fact_model_registry`` as **production**.
       4. Retire the previous production model.
       5. Copy candidate files to production filenames.

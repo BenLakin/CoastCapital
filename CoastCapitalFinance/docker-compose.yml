@@ -13,6 +13,7 @@ services:
       - "5000:5000"
     environment:
       FLASK_ENV: ${FLASK_ENV:-production}
+      API_KEY: ${API_KEY}
       MYSQL_HOST: coastcapital-mysql
       MYSQL_PORT: ${MYSQL_PORT:-3306}
       MYSQL_USER: ${MYSQL_USER:-dbadmin}

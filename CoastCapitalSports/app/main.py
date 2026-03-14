@@ -236,7 +236,7 @@ def score_model_endpoint():
 
 @app.route("/cross-validate-model", methods=["POST"])
 def cross_validate_model_endpoint():
-    """K-fold cross-validate a model without saving artifacts.
+    """Time-series cross-validate a model without saving artifacts.
 
     Body (JSON, all optional):
       sport         — "nfl" | "ncaa_mbb" | "mlb"  (default: "nfl")
