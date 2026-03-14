@@ -92,9 +92,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "[Database] Nightly Maintenance workflow started at {{ $now.toISO() }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -115,9 +116,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "[Database] Health Check workflow started at {{ $now.toISO() }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -138,9 +140,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "[Database] Weekly Full Maintenance workflow started at {{ $now.toISO() }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -161,9 +164,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "[Database] Manual Maintenance triggered via webhook at {{ $now.toISO() }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -355,9 +359,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-action-needed",
         "text": "=[Database] :mag: Maintenance recommendations found ({{ $json.count }}). Review recommended optimizations in the maintenance dashboard.",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -378,9 +383,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Database] Nightly maintenance completed successfully. No recommendations.",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -463,9 +469,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
         "text": "=[Database] Health snapshot captured at {{ $now.toISO() }}. See maintenance dashboard for details.",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-recent-summaries"
       },
       "credentials": {
         "slackApi": {
@@ -563,9 +570,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Database] Weekly full maintenance and status flush completed at {{ $now.toISO() }}.",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {

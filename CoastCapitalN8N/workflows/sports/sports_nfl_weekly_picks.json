@@ -77,9 +77,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Sports] Job started: Sports NFL - Weekly Picks Report ({{ $now.format('yyyy-MM-dd') }})",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -187,9 +188,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-recent-summaries",
         "text": "=[Sports] NFL Weekly Picks Report\nSeason {{ $json.season }} - Week {{ $json.week }}\n\n{{ $json.picks_summary || 'See full report in dashboard' }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-recent-summaries"
       },
       "credentials": {
         "slackApi": {
@@ -210,9 +212,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-action-needed",
         "text": "=[Sports] :x: *Sports NFL - Weekly Picks Report* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {

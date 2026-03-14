@@ -72,9 +72,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Assistant] Job started: Followup Check ({{ $now.format('yyyy-MM-dd') }})",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -169,9 +170,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-action-needed",
         "text": "={{ $json.message }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -205,9 +207,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Assistant] :white_check_mark: *Assistant - Followup Check (Unanswered Emails > 3 Days)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",

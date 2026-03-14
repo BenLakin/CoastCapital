@@ -73,9 +73,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "[Assistant] Task Sync workflow started at {{ $now.toISO() }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "credentials": {
         "slackApi": {
@@ -203,9 +204,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-action-needed",
         "text": "=[Assistant] :x: *Assistant - Task Sync (30 min)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-action-needed"
       },
       "credentials": {
         "slackApi": {
@@ -261,9 +263,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-jobs-fyi",
         "text": "=[Assistant] :white_check_mark: *Assistant - Task Sync (30 min)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-jobs-fyi"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",

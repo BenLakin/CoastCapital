@@ -177,9 +177,10 @@
       "parameters": {
         "resource": "message",
         "operation": "post",
-        "channel": "#coast-current-status",
         "text": "={{ $json.message }}",
-        "otherOptions": {}
+        "otherOptions": {},
+        "select": "byName",
+        "channelId": "coast-current-status"
       },
       "credentials": {
         "slackApi": {
