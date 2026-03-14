@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import mysql.connector
@@ -102,7 +102,7 @@ def health_check():
     return HealthResponse(
         status="ok" if mysql_ok else "degraded",
         mysql_connected=mysql_ok,
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(timezone.utc).isoformat() + "Z",
     )
 
 
@@ -179,7 +179,7 @@ def run_maintenance(
         success=True,
         job_type=req.job_type,
         schema_name=req.schema_name,
-        started_at=datetime.utcnow().isoformat() + "Z",
+        started_at=datetime.now(timezone.utc).isoformat() + "Z",
         duration_ms=duration_ms,
         message=message,
     )

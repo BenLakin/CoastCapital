@@ -9,7 +9,21 @@
       "Bash(python3 -m pytest tests/ --tb=short -q)",
       "Bash(pip3 install --break-system-packages pytest pytest-mock freezegun flask flask-cors mysql-connector-python anthropic python-dotenv)",
       "Bash(pip3 install --break-system-packages feedparser caldav icalendar pytz lxml beautifulsoup4 requests)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest test_maintenance_api.py -v --tb=short)",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -m pytest test_maintenance_api.py -v --tb=short)",
+      "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalDatabase/mysql/init/01z-fix-passwords.sh)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(docker compose:*)",
+      "Bash(ln -sf /Volumes/CoastTechnology/CoastCapital/.env /Volumes/CoastTechnology/CoastCapital/CoastCapitalDatabase/.env)",
+      "Bash(docker ps:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker run:*)",
+      "Bash(curl -s http://localhost:8080/health)",
+      "Bash(python3 -m json.tool)",
+      "Bash(docker exec:*)"
     ]
   }
 }

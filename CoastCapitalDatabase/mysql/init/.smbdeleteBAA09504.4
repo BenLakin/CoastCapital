@@ -306,13 +306,13 @@ BEGIN
   SET GLOBAL innodb_stats_auto_recalc = ON;
 END$$
 
--- Keep $$ delimiter for events with BEGIN...END blocks
+DELIMITER ;
 
 -- ─── SCHEDULED EVENT: NIGHTLY HEALTH CAPTURE ──────────────────────────────────
 -- Note: event_scheduler must be ON. Set via SET GLOBAL event_scheduler = ON;
-SET GLOBAL event_scheduler = ON$$
+SET GLOBAL event_scheduler = ON;
 
-DROP EVENT IF EXISTS evt_nightly_health_capture$$
+DROP EVENT IF EXISTS evt_nightly_health_capture;
 CREATE EVENT evt_nightly_health_capture
   ON SCHEDULE EVERY 1 DAY
   STARTS (TIMESTAMP(CURDATE()) + INTERVAL 1 DAY + INTERVAL '02:00' HOUR_MINUTE)
@@ -324,10 +324,10 @@ CREATE EVENT evt_nightly_health_capture
       CALL capture_table_health();
       CALL capture_slow_query_summary();
       CALL generate_settings_recommendations();
-    END$$
+    END;
 
 -- Purge old maintenance logs > 90 days
-DROP EVENT IF EXISTS evt_purge_old_logs$$
+DROP EVENT IF EXISTS evt_purge_old_logs;
 CREATE EVENT evt_purge_old_logs
   ON SCHEDULE EVERY 1 WEEK
   STARTS (TIMESTAMP(CURDATE()) + INTERVAL 1 DAY + INTERVAL '03:00' HOUR_MINUTE)
@@ -339,6 +339,4 @@ CREATE EVENT evt_purge_old_logs
       DELETE FROM table_health_snapshot WHERE captured_at < NOW() - INTERVAL 90 DAY;
       DELETE FROM slow_query_summary   WHERE captured_at < NOW() - INTERVAL 90 DAY;
       DELETE FROM settings_recommendations WHERE evaluated_at < NOW() - INTERVAL 30 DAY AND applied = 1;
-    END$$
-
-DELIMITER ;
+    END;

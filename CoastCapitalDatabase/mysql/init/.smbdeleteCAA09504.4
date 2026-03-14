@@ -79,10 +79,10 @@ CREATE DATABASE IF NOT EXISTS `nhl_gold`
 CREATE USER IF NOT EXISTS 'dbadmin'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
 
 -- Read-only reporting user
-CREATE USER IF NOT EXISTS 'reporting'@'%' IDENTIFIED BY 'reporting_pass';
+CREATE USER IF NOT EXISTS 'reporting'@'%' IDENTIFIED BY '${MYSQL_REPORTING_PASSWORD:-reporting_pass}';
 
 -- Maintenance user: needs broader access for OPTIMIZE/ANALYZE
-CREATE USER IF NOT EXISTS 'maintenance'@'%' IDENTIFIED BY 'maintenance_pass';
+CREATE USER IF NOT EXISTS 'maintenance'@'%' IDENTIFIED BY '${MYSQL_MAINTENANCE_PASSWORD:-maintenance_pass}';
 
 -- ─── GRANT PRIVILEGES ──────────────────────────────────────────────────────────
 GRANT ALL PRIVILEGES ON `n8n_db`.*       TO 'dbadmin'@'%';

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mysql:
     image: mysql:8.4
@@ -9,6 +7,7 @@ services:
       - ../.env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-coastcapital}
       MYSQL_USER: ${MYSQL_USER:-dbadmin}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
@@ -18,11 +17,14 @@ services:
       - ./mysql/config/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
       - ./mysql/scripts:/scripts:ro
-      - ./logs/mysql:/var/log/mysql
+      # Logs now go to /var/lib/mysql/ (inside the named volume) to avoid
+      # permission issues with mounted host dirs during MySQL init.
     networks:
       - db-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      # CMD-SHELL runs through sh -c so $$VAR is expanded from the container env.
+      # Double-$ escapes docker-compose interpolation; the shell then sees $MYSQL_ROOT_PASSWORD.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent 2>/dev/null"]
       interval: 30s
       timeout: 10s
       retries: 5
