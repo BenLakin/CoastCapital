@@ -56,7 +56,7 @@ def _match_focus_team(text: str, sport: str) -> str | None:
     return None
 
 
-def fetch_espn_news(sport: str, limit: int = 25) -> list[dict]:
+def fetch_espn_news(sport: str, limit: int = 50) -> list[dict]:
     """Fetch news articles from the ESPN news API for *sport*.
 
     Returns

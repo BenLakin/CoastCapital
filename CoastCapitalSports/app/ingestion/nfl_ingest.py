@@ -192,7 +192,7 @@ def fetch_nfl_data(date_str=None):
     requests.HTTPError
         If the ESPN API returns a non-2xx status.
     """
-    params = {}
+    params = {"limit": 100}
     if date_str:
         params["dates"] = date_str.replace("-", "")
     logger.debug("fetch_nfl_data: GET %s  params=%s", ESPN_SCOREBOARD_URL, params)

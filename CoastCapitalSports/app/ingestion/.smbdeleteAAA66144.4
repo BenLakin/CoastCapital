@@ -47,7 +47,7 @@ def fetch_ncaa_mbb_data(date_str=None):
     requests.HTTPError
         If the ESPN API returns a non-2xx status.
     """
-    params = {"limit": 200, "groups": 50}
+    params = {}
     if date_str:
         params["dates"] = date_str.replace("-", "")
     logger.debug("fetch_ncaa_mbb_data: GET %s  params=%s", ESPN_SCOREBOARD_URL, params)
