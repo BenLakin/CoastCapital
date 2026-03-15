@@ -13,7 +13,7 @@
     },
     {
       "id": "3",
-      "name": "weekly"
+      "name": "daily"
     }
   ],
   "settings": {
@@ -22,11 +22,11 @@
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "notes": "Weekly universe sync. Auto-detects first run: if no price data exists, runs full_backfill (period=max, all history back to IPO). Otherwise does incremental update (last 10 days). Flow: Schedule → Load tickers → Check stats → IF first run → full backfill / ELSE incremental → Stats → Slack.",
+  "notes": "Daily universe sync at 6AM ET. Auto-detects first run: if no price data exists, runs full_backfill (period=max, all history back to IPO). Otherwise does incremental update (last 10 days). Flow: Schedule → Load tickers → Check stats → IF first run → full backfill / ELSE incremental → Stats → Slack.",
   "nodes": [
     {
       "id": "node-trigger",
-      "name": "Sunday Midnight ET",
+      "name": "Daily 6AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [250, 300],
@@ -35,7 +35,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 0 * * 0"
+              "expression": "0 6 * * *"
             }
           ]
         }
@@ -141,7 +141,7 @@
         "specifyBody": "json",
         "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
         "options": {
-          "timeout": 43200000
+          "timeout": 86400000
         }
       }
     },
@@ -171,7 +171,7 @@
         "specifyBody": "json",
         "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
         "options": {
-          "timeout": 43200000
+          "timeout": 86400000
         }
       }
     },
@@ -201,7 +201,7 @@
         "specifyBody": "json",
         "jsonBody": "={\"days_back\": 10}",
         "options": {
-          "timeout": 3600000
+          "timeout": 14400000
         }
       }
     },
@@ -231,7 +231,7 @@
         "specifyBody": "json",
         "jsonBody": "={\"days_back\": 10}",
         "options": {
-          "timeout": 7200000
+          "timeout": 14400000
         }
       }
     },
@@ -284,7 +284,7 @@
     }
   ],
   "connections": {
-    "Sunday Midnight ET": {
+    "Daily 6AM ET": {
       "main": [
         [
           {
