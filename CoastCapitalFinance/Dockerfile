@@ -35,4 +35,4 @@ USER financeapp
 EXPOSE 5000
 
 # Entrypoint
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--log-level", "info", "wsgi:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "43200", "--log-level", "info", "wsgi:app"]
