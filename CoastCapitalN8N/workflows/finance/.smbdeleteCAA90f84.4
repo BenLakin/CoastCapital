@@ -1,6 +1,6 @@
 {
-  "id": "a1b2c3d4-1002-4000-8002-000000000002",
-  "name": "Finance - Weekly Model Retrain",
+  "id": "a1b2c3d4-1003-4000-8003-000000000003",
+  "name": "Finance - Watchlist Sync",
   "active": true,
   "versionId": "1",
   "meta": {
@@ -12,8 +12,8 @@
       "name": "finance"
     },
     {
-      "id": "3",
-      "name": "weekly"
+      "id": "2",
+      "name": "daily"
     }
   ],
   "settings": {
@@ -22,11 +22,11 @@
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "notes": "Runs every Sunday at 2:00 AM ET. Calls POST /n8n/retrain-all to retrain all ML models (LightGBM + XGBoost) with the latest week of data. Logs results and alerts on failure.",
+  "notes": "Runs daily at 5:00 AM ET. Fetches the current watchlist, checks for new tickers, and triggers a backfill for any tickers missing historical data.",
   "nodes": [
     {
       "id": "node-trigger",
-      "name": "Sunday 2:00 AM ET",
+      "name": "Daily 5:00 AM ET",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [
@@ -38,7 +38,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 2 * * 0"
+              "expression": "0 5 * * *"
             }
           ]
         }
@@ -53,9 +53,9 @@
         250,
         500
       ],
-      "webhookId": "finance-weekly-retrain",
+      "webhookId": "finance-watchlist-sync",
       "parameters": {
-        "path": "/webhook/finance-retrain",
+        "path": "/webhook/finance-watchlist",
         "httpMethod": "POST",
         "responseMode": "onReceived",
         "options": {}
@@ -71,7 +71,7 @@
         300
       ],
       "parameters": {
-        "text": "=[Finance] Job started: Finance - Weekly Model Retrain ({{ $now.format('yyyy-MM-dd') }})",
+        "text": "=[Finance] Job started: Finance - Watchlist Sync ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
@@ -88,8 +88,8 @@
       }
     },
     {
-      "id": "node-http-retrain",
-      "name": "POST /n8n/retrain-all",
+      "id": "node-get-watchlist",
+      "name": "GET /n8n/watchlist",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
@@ -97,12 +97,12 @@
         300
       ],
       "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:5050/n8n/retrain-all",
+        "method": "GET",
+        "url": "http://host.docker.internal:5000/n8n/watchlist",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
-          "timeout": 600000
+          "timeout": 30000
         }
       },
       "credentials": {
@@ -110,11 +110,12 @@
           "id": "cred-finance-webhook",
           "name": "Finance Webhook Auth"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
-      "id": "node-check-success",
-      "name": "Check Success",
+      "id": "node-check-http-error",
+      "name": "Check HTTP Error",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -130,12 +131,12 @@
           },
           "conditions": [
             {
-              "id": "cond-status",
-              "leftValue": "={{ $json.status }}",
-              "rightValue": "success",
+              "id": "cond-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "equals"
+                "operation": "notEquals"
               }
             }
           ],
@@ -144,40 +145,16 @@
       }
     },
     {
-      "id": "node-log-success",
-      "name": "Log Retrain Success",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.2,
+      "id": "node-slack-error",
+      "name": "Slack - Watchlist Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
       "position": [
         1130,
         200
       ],
       "parameters": {
-        "mode": "manual",
-        "duplicateItem": false,
-        "assignments": {
-          "assignments": [
-            {
-              "id": "result",
-              "name": "result",
-              "value": "=[Finance] Weekly retrain completed successfully. Models retrained: {{ $json.models_retrained || 'all' }}",
-              "type": "string"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "node-slack-error",
-      "name": "Slack - Retrain Failed",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1130,
-        400
-      ],
-      "parameters": {
-        "text": "=[Finance] :x: *Finance - Weekly Model Retrain* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+        "text": "=[Finance] :x: *Finance - Watchlist Sync* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
@@ -200,18 +177,94 @@
       "typeVersion": 4.1,
       "position": [
         1350,
-        400
+        200
       ],
       "parameters": {
         "method": "POST",
         "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"Finance - Weekly Model Retrain\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "jsonBody": "={\"workflow_name\": \"Finance - Watchlist Sync\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
         "options": {
           "timeout": 10000
         }
       }
+    },
+    {
+      "id": "node-check-new",
+      "name": "Has New Tickers?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1130,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-new",
+              "leftValue": "={{ $json.needs_backfill?.length || 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-backfill",
+      "name": "POST /n8n/backfill",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1350,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/n8n/backfill",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "tickers",
+              "value": "={{ $json.needs_backfill }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-finance-webhook",
+          "name": "Finance Webhook Auth"
+        }
+      }
+    },
+    {
+      "id": "node-no-action",
+      "name": "No New Tickers",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1350,
+        600
+      ],
+      "parameters": {}
     },
     {
       "parameters": {},
@@ -226,7 +279,7 @@
     },
     {
       "parameters": {
-        "text": "=[Finance] :white_check_mark: *Finance - Weekly Model Retrain* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "text": "=[Finance] :white_check_mark: *Finance - Watchlist Sync* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
@@ -252,7 +305,7 @@
     }
   ],
   "connections": {
-    "Sunday 2:00 AM ET": {
+    "Daily 5:00 AM ET": {
       "main": [
         [
           {
@@ -278,47 +331,65 @@
       "main": [
         [
           {
-            "node": "POST /n8n/retrain-all",
+            "node": "GET /n8n/watchlist",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "POST /n8n/retrain-all": {
+    "GET /n8n/watchlist": {
       "main": [
         [
           {
-            "node": "Check Success",
+            "node": "Check HTTP Error",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Success": {
+    "Check HTTP Error": {
       "main": [
         [
           {
-            "node": "Log Retrain Success",
+            "node": "Slack - Watchlist Error",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Slack - Retrain Failed",
+            "node": "Has New Tickers?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Slack - Retrain Failed": {
+    "Slack - Watchlist Error": {
       "main": [
         [
           {
             "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Tickers?": {
+      "main": [
+        [
+          {
+            "node": "POST /n8n/backfill",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No New Tickers",
             "type": "main",
             "index": 0
           }

@@ -16,7 +16,7 @@ import requests
 HOST = os.getenv("TEST_HOST", "localhost")
 
 SERVICES = {
-    "finance":     f"http://{HOST}:5000",
+    "finance":     f"http://{HOST}:5050",
     "assistant":   f"http://{HOST}:5100",
     "homelab":     f"http://{HOST}:5200",
     "sports":      f"http://{HOST}:5300",
