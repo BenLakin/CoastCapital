@@ -35,7 +35,7 @@ logger.info("database: host=%s  port=%d  user=%s", _MYSQL_HOST, _MYSQL_PORT, _MY
 # ---------------------------------------------------------------------------
 
 _pools: dict[str, pooling.MySQLConnectionPool] = {}
-_POOL_SIZE = 50
+_POOL_SIZE = 25
 
 
 def _get_pool(schema: str | None) -> pooling.MySQLConnectionPool:
