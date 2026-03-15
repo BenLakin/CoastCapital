@@ -259,7 +259,7 @@ USE `finance_silver`;
 
 -- ─── dim_stock ───────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `dim_stock` (
-  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`            INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `ticker`              VARCHAR(20)    NOT NULL,
   `company_name`        VARCHAR(255)   NOT NULL,
   `exchange`            VARCHAR(50)    NULL,
