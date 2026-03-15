@@ -133,59 +133,59 @@ def insert_mlb_data(date_str=None):
         games_processed = 0
 
         for event in events:
-        game_id = event.get("id", "unknown")
-        try:
-            comp = event["competitions"][0]
-            home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
-            away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
-
-            home_score = int(home.get("score", 0))
-            away_score = int(away.get("score", 0))
-            margin = home_score - away_score
-            round_name = _extract_round_name(event, comp)
-            is_postseason_game = _is_postseason(round_name)
-
-            dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
-                "game_id": game_id,
-                "game_date": comp.get("date"),
-                "home_team": home["team"]["displayName"],
-                "away_team": away["team"]["displayName"],
-                "home_score": home_score,
-                "away_score": away_score,
-                "margin": margin,
-                "is_postseason_game": is_postseason_game,
-                "round_name": round_name,
-                "playoff_experience_home": 0.0,
-                "playoff_experience_away": 0.0,
-            })
-
-            for odds in comp.get("odds", []):
-                provider = (odds.get("provider") or {}).get("name", "Unknown")
-                ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
-                ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
-                total_line = odds.get("overUnder")
-
-                dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
-                    "game_id": game_id,
-                    "sportsbook": provider,
-                    "moneyline_home": ml_home,
-                    "moneyline_away": ml_away,
-                    "total_line": total_line,
-                    "market_timestamp": datetime.now(),
-                }, on_duplicate_update=False)
-
-            # Fetch summary for potential future enrichment; errors are non-fatal
+            game_id = event.get("id", "unknown")
             try:
-                fetch_espn_summary(game_id)
+                comp = event["competitions"][0]
+                home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
+                away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
+
+                home_score = int(home.get("score", 0))
+                away_score = int(away.get("score", 0))
+                margin = home_score - away_score
+                round_name = _extract_round_name(event, comp)
+                is_postseason_game = _is_postseason(round_name)
+
+                dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
+                    "game_id": game_id,
+                    "game_date": comp.get("date"),
+                    "home_team": home["team"]["displayName"],
+                    "away_team": away["team"]["displayName"],
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "margin": margin,
+                    "is_postseason_game": is_postseason_game,
+                    "round_name": round_name,
+                    "playoff_experience_home": 0.0,
+                    "playoff_experience_away": 0.0,
+                })
+
+                for odds in comp.get("odds", []):
+                    provider = (odds.get("provider") or {}).get("name", "Unknown")
+                    ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
+                    ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
+                    total_line = odds.get("overUnder")
+
+                    dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
+                        "game_id": game_id,
+                        "sportsbook": provider,
+                        "moneyline_home": ml_home,
+                        "moneyline_away": ml_away,
+                        "total_line": total_line,
+                        "market_timestamp": datetime.now(),
+                    }, on_duplicate_update=False)
+
+                # Fetch summary for potential future enrichment; errors are non-fatal
+                try:
+                    fetch_espn_summary(game_id)
+                except Exception as exc:
+                    logger.debug("insert_mlb_data: summary fetch skipped for game=%s — %s", game_id, exc)
+
+                games_processed += 1
+
             except Exception as exc:
-                logger.debug("insert_mlb_data: summary fetch skipped for game=%s — %s", game_id, exc)
-
-            games_processed += 1
-
-        except Exception as exc:
-            logger.error(
-                "insert_mlb_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
-            )
+                logger.error(
+                    "insert_mlb_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
+                )
 
         conn.commit()
         cursor.close()

@@ -366,114 +366,114 @@ def insert_nfl_data(date_str=None):
         games_processed = 0
 
         for event in events:
-        game_id = event.get("id", "unknown")
-        try:
-            comp = event["competitions"][0]
-            home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
-            away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
+            game_id = event.get("id", "unknown")
+            try:
+                comp = event["competitions"][0]
+                home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
+                away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
 
-            home_score = int(home.get("score", 0))
-            away_score = int(away.get("score", 0))
-            margin = home_score - away_score
-            round_name = _extract_round_name(event, comp)
-            is_postseason_game = _is_postseason(round_name)
+                home_score = int(home.get("score", 0))
+                away_score = int(away.get("score", 0))
+                margin = home_score - away_score
+                round_name = _extract_round_name(event, comp)
+                is_postseason_game = _is_postseason(round_name)
 
-            dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
-                "game_id": game_id,
-                "game_date": comp.get("date"),
-                "home_team": home["team"]["displayName"],
-                "away_team": away["team"]["displayName"],
-                "home_score": home_score,
-                "away_score": away_score,
-                "margin": margin,
-                "is_postseason_game": is_postseason_game,
-                "round_name": round_name,
-                "playoff_experience_home": 0.0,
-                "playoff_experience_away": 0.0,
-            })
-
-            for odds in comp.get("odds", []):
-                provider = (odds.get("provider") or {}).get("name", "Unknown")
-                spread = odds.get("spread")
-                ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
-                ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
-                total_line = odds.get("overUnder")
-
-                dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
+                dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
                     "game_id": game_id,
-                    "sportsbook": provider,
-                    "spread": spread,
-                    "moneyline_home": ml_home,
-                    "moneyline_away": ml_away,
-                    "total_line": total_line,
-                    "market_timestamp": datetime.now(),
-                }, on_duplicate_update=False)
-
-            # --- game context ---
-            venue = comp.get("venue", {})
-            venue_name = venue.get("fullName") or venue.get("name", "")
-            venue_city = (venue.get("address") or {}).get("city", "")
-            indoor = int(bool(venue.get("indoor", False)))
-            surface = "grass" if venue.get("grass") else "turf"
-            attendance = comp.get("attendance")
-            week_number = (event.get("week") or {}).get("number")
-            season = (event.get("season") or {}).get("year")
-
-            dynamic_upsert(cursor, SCHEMA, "fact_game_context", {
-                "game_id": game_id,
-                "week_number": week_number,
-                "season": season,
-                "venue_name": venue_name,
-                "venue_city": venue_city,
-                "surface": surface,
-                "indoor": indoor,
-                "attendance": attendance,
-            })
-
-            # --- team standing snapshot ---
-            game_date_str = comp.get("date", "")
-            for competitor, side in [(home, "home"), (away, "away")]:
-                team_name = competitor["team"]["displayName"]
-                records = competitor.get("records", [])
-                wins, losses = _parse_record(records, "total")
-                hw, hl = _parse_record(records, "home")
-                aw, al = _parse_record(records, "road")
-                total = wins + losses
-                win_pct = wins / total if total > 0 else 0.0
-                streak = _compute_streak(cursor, team_name, game_date_str)
-
-                dynamic_upsert(cursor, SCHEMA, "fact_team_standing", {
-                    "game_id": game_id,
-                    "team": team_name,
-                    "side": side,
-                    "season": season,
-                    "week": week_number,
-                    "wins": wins,
-                    "losses": losses,
-                    "win_pct": win_pct,
-                    "home_wins": hw,
-                    "home_losses": hl,
-                    "away_wins": aw,
-                    "away_losses": al,
-                    "current_streak": streak,
+                    "game_date": comp.get("date"),
+                    "home_team": home["team"]["displayName"],
+                    "away_team": away["team"]["displayName"],
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "margin": margin,
+                    "is_postseason_game": is_postseason_game,
+                    "round_name": round_name,
+                    "playoff_experience_home": 0.0,
+                    "playoff_experience_away": 0.0,
                 })
 
-            # --- boxscore stats (summary API) ---
-            _insert_game_stats(cursor, game_id)
+                for odds in comp.get("odds", []):
+                    provider = (odds.get("provider") or {}).get("name", "Unknown")
+                    spread = odds.get("spread")
+                    ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
+                    ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
+                    total_line = odds.get("overUnder")
 
-            # --- injury reports ---
-            _insert_injury_reports(
-                cursor, game_id,
-                home["team"]["id"], home["team"]["displayName"],
-                away["team"]["id"], away["team"]["displayName"],
-            )
+                    dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
+                        "game_id": game_id,
+                        "sportsbook": provider,
+                        "spread": spread,
+                        "moneyline_home": ml_home,
+                        "moneyline_away": ml_away,
+                        "total_line": total_line,
+                        "market_timestamp": datetime.now(),
+                    }, on_duplicate_update=False)
 
-            games_processed += 1
+                # --- game context ---
+                venue = comp.get("venue", {})
+                venue_name = venue.get("fullName") or venue.get("name", "")
+                venue_city = (venue.get("address") or {}).get("city", "")
+                indoor = int(bool(venue.get("indoor", False)))
+                surface = "grass" if venue.get("grass") else "turf"
+                attendance = comp.get("attendance")
+                week_number = (event.get("week") or {}).get("number")
+                season = (event.get("season") or {}).get("year")
 
-        except Exception as exc:
-            logger.error(
-                "insert_nfl_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
-            )
+                dynamic_upsert(cursor, SCHEMA, "fact_game_context", {
+                    "game_id": game_id,
+                    "week_number": week_number,
+                    "season": season,
+                    "venue_name": venue_name,
+                    "venue_city": venue_city,
+                    "surface": surface,
+                    "indoor": indoor,
+                    "attendance": attendance,
+                })
+
+                # --- team standing snapshot ---
+                game_date_str = comp.get("date", "")
+                for competitor, side in [(home, "home"), (away, "away")]:
+                    team_name = competitor["team"]["displayName"]
+                    records = competitor.get("records", [])
+                    wins, losses = _parse_record(records, "total")
+                    hw, hl = _parse_record(records, "home")
+                    aw, al = _parse_record(records, "road")
+                    total = wins + losses
+                    win_pct = wins / total if total > 0 else 0.0
+                    streak = _compute_streak(cursor, team_name, game_date_str)
+
+                    dynamic_upsert(cursor, SCHEMA, "fact_team_standing", {
+                        "game_id": game_id,
+                        "team": team_name,
+                        "side": side,
+                        "season": season,
+                        "week": week_number,
+                        "wins": wins,
+                        "losses": losses,
+                        "win_pct": win_pct,
+                        "home_wins": hw,
+                        "home_losses": hl,
+                        "away_wins": aw,
+                        "away_losses": al,
+                        "current_streak": streak,
+                    })
+
+                # --- boxscore stats (summary API) ---
+                _insert_game_stats(cursor, game_id)
+
+                # --- injury reports ---
+                _insert_injury_reports(
+                    cursor, game_id,
+                    home["team"]["id"], home["team"]["displayName"],
+                    away["team"]["id"], away["team"]["displayName"],
+                )
+
+                games_processed += 1
+
+            except Exception as exc:
+                logger.error(
+                    "insert_nfl_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
+                )
 
         conn.commit()
         cursor.close()
