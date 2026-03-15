@@ -65,21 +65,20 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         470,
         100
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] Job started: Sports - News Ingest & Summarize ({{ $now.format('yyyy-MM-dd HH:mm') }})",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -220,20 +219,19 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :white_check_mark: *Sports - News Ingest & Summarize* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1200,
         300

@@ -183,7 +183,7 @@
       "id": "node-ack",
       "name": "Slack - Acknowledged",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1350,
         200
@@ -195,7 +195,8 @@
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -208,7 +209,7 @@
       "id": "node-clarify",
       "name": "Slack - Ask Clarification",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1130,
         380
@@ -220,7 +221,8 @@
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

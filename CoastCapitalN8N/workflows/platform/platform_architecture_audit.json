@@ -177,7 +177,7 @@
       "id": "node-slack-notify",
       "name": "Slack - Findings",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1600,
         300
@@ -189,7 +189,8 @@
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -211,20 +212,19 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Platform] :white_check_mark: *Platform - Architecture Audit (Daily Code Quality)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1200,
         300

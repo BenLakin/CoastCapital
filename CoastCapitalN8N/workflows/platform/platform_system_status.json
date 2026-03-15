@@ -169,21 +169,20 @@
       "id": "node-slack-reply",
       "name": "Slack - Status Report",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1030,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "={{ $json.message }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0AL5TR8EUF",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

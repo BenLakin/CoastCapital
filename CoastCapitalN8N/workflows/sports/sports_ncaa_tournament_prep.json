@@ -57,21 +57,20 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         470,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] NCAA Tournament Prep started ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -260,21 +259,20 @@
       "id": "node-slack-promote-warning",
       "name": "Slack - Promotion Warning",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         2010,
         350
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :warning: NCAA model promotion did not pass validation (continuing with existing model): {{ $json.error || $json.message || 'Check logs' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -316,21 +314,20 @@
       "id": "node-slack-success",
       "name": "Slack - Tournament Prep Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         2450,
         200
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] NCAA Tournament Prep Complete ({{ $now.format('yyyy-MM-dd') }})\nPipeline: Backfill -> Features -> Train -> Promote -> Simulate\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}\nModel Accuracy: {{ $json.accuracy || 'N/A' }}\nBracket HTML: {{ $json.html_url || 'generated' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -343,21 +340,20 @@
       "id": "node-slack-backfill-failed",
       "name": "Slack - Backfill Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1130,
         450
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -390,21 +386,20 @@
       "id": "node-slack-materialize-failed",
       "name": "Slack - Materialize Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1350,
         450
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -437,21 +432,20 @@
       "id": "node-slack-train-failed",
       "name": "Slack - Train Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1570,
         550
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -484,21 +478,20 @@
       "id": "node-slack-simulate-failed",
       "name": "Slack - Simulate Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         2450,
         450
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

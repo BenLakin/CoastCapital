@@ -69,21 +69,20 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         400,
         350
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[HomeLab] Health Check workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -242,21 +241,20 @@
       "id": "node-slack-alert",
       "name": "Slack - Service Down Alert",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1320,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[HomeLab] :rotating_light: Service Health Check FAILED\nTime: {{ $now.toISO() }}\nCheck n8n execution log for details.",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -299,20 +297,19 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[HomeLab] :white_check_mark: *Platform - Health Check (5 min)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1200,
         300

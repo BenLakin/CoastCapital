@@ -91,7 +91,7 @@
       "id": "node-job-log",
       "name": "Slack - Job Log",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         470,
         600
@@ -103,7 +103,8 @@
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -355,7 +356,7 @@
       "id": "node-slack-notify",
       "name": "Slack - MR Created",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1820,
         400
@@ -367,7 +368,8 @@
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

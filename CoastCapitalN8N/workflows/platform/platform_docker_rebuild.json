@@ -44,21 +44,20 @@
       "id": "node-slack-started",
       "name": "Slack - Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         470,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Platform] Docker rebuild started",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -279,21 +278,20 @@
       "id": "node-slack-success",
       "name": "Slack - All Success",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         2720,
         200
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Platform] All containers rebuilt successfully",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -306,21 +304,20 @@
       "id": "node-slack-failure",
       "name": "Slack - Partial Failure",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         2720,
         400
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Platform] Docker rebuild partially failed: {{ $json.details }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

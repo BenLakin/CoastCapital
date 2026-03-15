@@ -65,21 +65,20 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         470,
         200
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] Job started: Sports NFL - Game Results Ingest ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -238,21 +237,20 @@
       "id": "node-slack-results",
       "name": "Slack - Game Results",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1570,
         75
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] NFL game results ingested for {{ $now.format('yyyy-MM-dd') }}\nGames processed: {{ $json.games_ingested || 'check logs' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALQUT54PN",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -265,21 +263,20 @@
       "id": "node-slack-error",
       "name": "Slack - Ingest Failed",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1350,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Sports] :x: *Sports NFL - Game Results Ingest* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

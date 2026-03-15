@@ -65,21 +65,20 @@
       "id": "node-job-started",
       "name": "Job Started",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         420,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[HomeLab] Daily Infrastructure Report workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -168,21 +167,20 @@
       "id": "node-slack-report",
       "name": "Slack - Daily Digest",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1060,
         200
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "={{ $json.report_text }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALQUT54PN",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {

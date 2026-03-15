@@ -84,21 +84,20 @@
       "id": "node-job-started-nightly",
       "name": "Job Started - Nightly",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         420,
         300
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Database] Nightly Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -111,21 +110,20 @@
       "id": "node-job-started-health",
       "name": "Job Started - Health",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         420,
         480
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Database] Health Check workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -138,21 +136,20 @@
       "id": "node-job-started-weekly",
       "name": "Job Started - Weekly",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         420,
         660
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Database] Weekly Full Maintenance workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -165,21 +162,20 @@
       "id": "node-job-started-webhook",
       "name": "Job Started - Webhook",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         420,
         840
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "[Database] Manual Maintenance triggered via webhook at {{ $now.toISO() }}",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -363,21 +359,20 @@
       "id": "node-slack-recommendations",
       "name": "Slack - Recommendations Alert",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1800,
         140
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Database] :mag: Maintenance recommendations found ({{ $json.count }}). Review recommended optimizations in the maintenance dashboard.",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALHU9MADB",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -390,21 +385,20 @@
       "id": "node-slack-nightly-complete",
       "name": "Slack - Nightly Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1800,
         340
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Database] Nightly maintenance completed successfully. No recommendations.",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -479,21 +473,20 @@
       "id": "node-slack-health-report",
       "name": "Slack - Health Report",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1100,
         480
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Database] Health snapshot captured at {{ $now.toISO() }}. See maintenance dashboard for details.",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALQUT54PN",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
@@ -583,21 +576,20 @@
       "id": "node-slack-weekly-complete",
       "name": "Slack - Weekly Complete",
       "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
+      "typeVersion": 2.3,
       "position": [
         1100,
         660
       ],
       "parameters": {
-        "resource": "message",
-        "operation": "post",
         "text": "=[Database] Weekly full maintenance and status flush completed at {{ $now.toISO() }}.",
         "otherOptions": {},
         "channelId": {
           "__rl": true,
           "value": "C0ALK9LU6H4",
           "mode": "id"
-        }
+        },
+        "select": "channel"
       },
       "credentials": {
         "slackApi": {
