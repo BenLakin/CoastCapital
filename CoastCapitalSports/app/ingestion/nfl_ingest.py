@@ -372,9 +372,10 @@ def insert_nfl_data(date_str=None):
                 home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
                 away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
 
+                game_completed = comp.get("status", {}).get("type", {}).get("completed", False)
                 home_score = int(home.get("score", 0))
                 away_score = int(away.get("score", 0))
-                margin = home_score - away_score
+                margin = home_score - away_score if game_completed else None
                 round_name = _extract_round_name(event, comp)
                 is_postseason_game = _is_postseason(round_name)
 
@@ -383,9 +384,10 @@ def insert_nfl_data(date_str=None):
                     "game_date": comp.get("date"),
                     "home_team": home["team"]["displayName"],
                     "away_team": away["team"]["displayName"],
-                    "home_score": home_score,
-                    "away_score": away_score,
+                    "home_score": home_score if game_completed else None,
+                    "away_score": away_score if game_completed else None,
                     "margin": margin,
+                    "game_completed": int(game_completed),
                     "is_postseason_game": is_postseason_game,
                     "round_name": round_name,
                     "playoff_experience_home": 0.0,

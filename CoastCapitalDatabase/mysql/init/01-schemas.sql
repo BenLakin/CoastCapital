@@ -211,6 +211,40 @@ FLUSH PRIVILEGES;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
+-- NCAA MBB — Reference Tables (static lookup data)
+-- ═══════════════════════════════════════════════════════════════════════════════
+USE `ncaa_mbb_silver`;
+
+-- Historical NCAA tournament win rates by seed (1985-2024)
+CREATE TABLE IF NOT EXISTS `fact_seed_history` (
+  `seed`            TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  `win_pct`         DECIMAL(5,4) NOT NULL COMMENT 'Overall tournament win percentage',
+  `upset_win_pct`   DECIMAL(5,4) NOT NULL COMMENT 'Win pct when lower seed (upset wins)'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `fact_seed_history` (seed, win_pct, upset_win_pct) VALUES
+  ( 1, 0.8500, 0.0000),
+  ( 2, 0.7200, 0.5200),
+  ( 3, 0.6400, 0.4600),
+  ( 4, 0.5800, 0.4100),
+  ( 5, 0.4700, 0.3500),
+  ( 6, 0.4400, 0.3700),
+  ( 7, 0.3900, 0.3600),
+  ( 8, 0.3600, 0.4900),
+  ( 9, 0.3400, 0.5100),
+  (10, 0.3500, 0.6300),
+  (11, 0.3400, 0.6100),
+  (12, 0.3500, 0.6500),
+  (13, 0.2100, 0.7900),
+  (14, 0.1500, 0.8500),
+  (15, 0.0700, 0.9300),
+  (16, 0.0100, 0.9900)
+ON DUPLICATE KEY UPDATE
+  win_pct = VALUES(win_pct),
+  upset_win_pct = VALUES(upset_win_pct);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
 -- FINANCE — Silver Layer (raw/cleaned data from external sources)
 -- ═══════════════════════════════════════════════════════════════════════════════
 USE `finance_silver`;

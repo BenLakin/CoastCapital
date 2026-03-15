@@ -84,19 +84,12 @@ def score_model(sport: str, target: str = "home_win", limit: int = 100) -> dict:
     with open(metadata_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 
-    # Score upcoming (unplayed) games — not historical ones
-    upcoming_df, _ = build_upcoming_feature_frame(sport)
-    if not upcoming_df.empty:
-        logger.info("score_model: scoring %d upcoming games for %s", len(upcoming_df), sport)
-        df = upcoming_df.head(limit).copy()
-    else:
-        # Fallback: score recent historical games (e.g. for backtesting)
-        logger.info("score_model: no upcoming games, falling back to recent historical for %s", sport)
-        materialize_features_to_modeling_silver(sport)
-        df = load_modeling_frame(sport)
-        if df.empty:
-            raise ValueError(f"No scoring data available for {sport}.")
-        df = df.tail(limit).copy()
+    materialize_features_to_modeling_silver(sport)
+    df = load_modeling_frame(sport)
+    if df.empty:
+        raise ValueError(f"No scoring data available for {sport}.")
+
+    df = df.tail(limit).copy()
 
     model = SportsBinaryClassifier(
         input_dim=len(FEATURE_COLUMNS),

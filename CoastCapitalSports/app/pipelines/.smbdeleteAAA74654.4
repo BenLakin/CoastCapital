@@ -200,9 +200,9 @@ def run_daily_pipeline(
         logger.info("daily_pipeline: === %s ===", sport.upper())
         sport_result = {}
 
-        # Step 1: Ingest (today + preceding week for gap-fill / score corrections)
-        logger.info("daily_pipeline: [%s] Step 1 — Ingest (%d-day lookback)", sport, LOOKBACK_DAYS + 1)
-        sport_result["ingest"] = _ingest_sport_with_lookback(sport, date_str)
+        # Step 1: Ingest
+        logger.info("daily_pipeline: [%s] Step 1 — Ingest", sport)
+        sport_result["ingest"] = _ingest_sport(sport, date_str)
         if sport_result["ingest"]["status"] == "error":
             had_error = True
 
