@@ -475,8 +475,7 @@ def insert_nfl_data(date_str=None):
                 "insert_nfl_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
             )
 
-        conn.commit()
-        cursor.close()
-        logger.info("insert_nfl_data: committed %d/%d games", games_processed, len(events))
-    finally:
-        conn.close()
+    conn.commit()
+    cursor.close()
+    conn.close()
+    logger.info("insert_nfl_data: committed %d/%d games", games_processed, len(events))

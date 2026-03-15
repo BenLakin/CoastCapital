@@ -466,94 +466,96 @@ def insert_ncaa_mbb_data(date_str=None):
     """
     logger.info("insert_ncaa_mbb_data: date=%s", date_str)
     conn = get_connection(SCHEMA)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    today = date.today()
-    seen_bpi_teams = set()  # avoid duplicate BPI calls per team per run
+        today = date.today()
+        seen_bpi_teams = set()  # avoid duplicate BPI calls per team per run
 
-    # Pull poll rankings once per ingest run
-    _insert_mbb_poll_rankings(cursor, today)
+        # Pull poll rankings once per ingest run
+        _insert_mbb_poll_rankings(cursor, today)
 
-    events = fetch_ncaa_mbb_data(date_str)
-    games_processed = 0
+        events = fetch_ncaa_mbb_data(date_str)
+        games_processed = 0
 
-    for event in events:
-        game_id = event.get("id", "unknown")
-        try:
-            comp = event["competitions"][0]
-            home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
-            away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
+        for event in events:
+            game_id = event.get("id", "unknown")
+            try:
+                comp = event["competitions"][0]
+                home = next(t for t in comp["competitors"] if t["homeAway"] == "home")
+                away = next(t for t in comp["competitors"] if t["homeAway"] == "away")
 
-            home_score = int(home.get("score", 0))
-            away_score = int(away.get("score", 0))
-            margin = home_score - away_score
-            round_name = _extract_round_name(event, comp)
-            is_tournament_game = _is_tournament_game(event, comp)
-            seed_home = _extract_seed(home)
-            seed_away = _extract_seed(away)
+                home_score = int(home.get("score", 0))
+                away_score = int(away.get("score", 0))
+                margin = home_score - away_score
+                round_name = _extract_round_name(event, comp)
+                is_tournament_game = _is_tournament_game(event, comp)
+                seed_home = _extract_seed(home)
+                seed_away = _extract_seed(away)
 
-            dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
-                "game_id": game_id,
-                "game_date": comp.get("date"),
-                "home_team": home["team"]["displayName"],
-                "away_team": away["team"]["displayName"],
-                "home_score": home_score,
-                "away_score": away_score,
-                "margin": margin,
-                "is_tournament_game": is_tournament_game,
-                "round_name": round_name,
-                "seed_home": seed_home,
-                "seed_away": seed_away,
-            })
-
-            for odds in comp.get("odds", []):
-                provider = (odds.get("provider") or {}).get("name", "Unknown")
-                spread = odds.get("spread")
-                ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
-                ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
-                total_line = odds.get("overUnder")
-
-                dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
+                dynamic_upsert(cursor, SCHEMA, "fact_game_results", {
                     "game_id": game_id,
-                    "sportsbook": provider,
-                    "spread": spread,
-                    "moneyline_home": ml_home,
-                    "moneyline_away": ml_away,
-                    "total_line": total_line,
-                    "market_timestamp": datetime.now(),
-                }, on_duplicate_update=False)
+                    "game_date": comp.get("date"),
+                    "home_team": home["team"]["displayName"],
+                    "away_team": away["team"]["displayName"],
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "margin": margin,
+                    "is_tournament_game": is_tournament_game,
+                    "round_name": round_name,
+                    "seed_home": seed_home,
+                    "seed_away": seed_away,
+                })
 
-            # --- game context ---
-            _insert_mbb_game_context(cursor, game_id, comp, event)
+                for odds in comp.get("odds", []):
+                    provider = (odds.get("provider") or {}).get("name", "Unknown")
+                    spread = odds.get("spread")
+                    ml_home = (odds.get("homeTeamOdds") or {}).get("moneyLine")
+                    ml_away = (odds.get("awayTeamOdds") or {}).get("moneyLine")
+                    total_line = odds.get("overUnder")
 
-            # --- team standings ---
-            _insert_mbb_team_standing(cursor, game_id, home, "home")
-            _insert_mbb_team_standing(cursor, game_id, away, "away")
+                    dynamic_upsert(cursor, SCHEMA, "fact_market_odds", {
+                        "game_id": game_id,
+                        "sportsbook": provider,
+                        "spread": spread,
+                        "moneyline_home": ml_home,
+                        "moneyline_away": ml_away,
+                        "total_line": total_line,
+                        "market_timestamp": datetime.now(),
+                    }, on_duplicate_update=False)
 
-            # --- boxscore stats ---
-            _insert_mbb_game_stats(cursor, game_id)
+                # --- game context ---
+                _insert_mbb_game_context(cursor, game_id, comp, event)
 
-            # --- game predictor (BPI pre-game win probability) ---
-            _insert_mbb_game_predictor(cursor, game_id)
+                # --- team standings ---
+                _insert_mbb_team_standing(cursor, game_id, home, "home")
+                _insert_mbb_team_standing(cursor, game_id, away, "away")
 
-            # --- BPI per team (season snapshot) ---
-            season = (event.get("season") or {}).get("year")
-            for competitor in [home, away]:
-                team_id = str(competitor["team"].get("id", ""))
-                team_name = competitor["team"]["displayName"]
-                bpi_key = (team_id, season)
-                if team_id and bpi_key not in seen_bpi_teams:
-                    seen_bpi_teams.add(bpi_key)
-                    _insert_mbb_bpi(cursor, team_id, team_name, season, today)
+                # --- boxscore stats ---
+                _insert_mbb_game_stats(cursor, game_id)
 
-            games_processed += 1
+                # --- game predictor (BPI pre-game win probability) ---
+                _insert_mbb_game_predictor(cursor, game_id)
 
-        except Exception as exc:
-            logger.error(
-                "insert_ncaa_mbb_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
-            )
+                # --- BPI per team (season snapshot) ---
+                season = (event.get("season") or {}).get("year")
+                for competitor in [home, away]:
+                    team_id = str(competitor["team"].get("id", ""))
+                    team_name = competitor["team"]["displayName"]
+                    bpi_key = (team_id, season)
+                    if team_id and bpi_key not in seen_bpi_teams:
+                        seen_bpi_teams.add(bpi_key)
+                        _insert_mbb_bpi(cursor, team_id, team_name, season, today)
 
-    conn.commit()
-    cursor.close()
-    conn.close()
-    logger.info("insert_ncaa_mbb_data: committed %d/%d games", games_processed, len(events))
+                games_processed += 1
+
+            except Exception as exc:
+                logger.error(
+                    "insert_ncaa_mbb_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
+                )
+
+        conn.commit()
+        cursor.close()
+        logger.info("insert_ncaa_mbb_data: committed %d/%d games", games_processed, len(events))
+    finally:
+        conn.close()

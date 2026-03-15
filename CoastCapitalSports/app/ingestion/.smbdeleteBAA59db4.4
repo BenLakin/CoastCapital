@@ -187,8 +187,7 @@ def insert_mlb_data(date_str=None):
                 "insert_mlb_data: failed on game_id=%s — %s", game_id, exc, exc_info=True
             )
 
-        conn.commit()
-        cursor.close()
-        logger.info("insert_mlb_data: committed %d games for date=%s", games_processed, date_str)
-    finally:
-        conn.close()
+    conn.commit()
+    cursor.close()
+    conn.close()
+    logger.info("insert_mlb_data: committed %d games for date=%s", games_processed, date_str)
