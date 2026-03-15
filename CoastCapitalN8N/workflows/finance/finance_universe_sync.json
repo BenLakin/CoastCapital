@@ -1,0 +1,241 @@
+[{
+  "id": "a1b2c3d4-1005-4000-8005-000000000005",
+  "name": "Finance - Universe Sync",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    {
+      "id": "1",
+      "name": "finance"
+    },
+    {
+      "id": "3",
+      "name": "weekly"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Weekly universe sync: loads tickers from SEC EDGAR + NASDAQ Trader, updates screener-tier prices + technicals, updates reference-tier prices. Runs Sunday at midnight ET.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Sunday Midnight ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 * * 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-load-universe",
+      "name": "Load Universe Tickers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/universe/load",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "node-screener-update",
+      "name": "Update Screener Prices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/screener/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "days_back",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 3600000
+        }
+      }
+    },
+    {
+      "id": "node-reference-update",
+      "name": "Update Reference Prices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/reference/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "days_back",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 7200000
+        }
+      }
+    },
+    {
+      "id": "node-get-stats",
+      "name": "Get Universe Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_finance:5000/n8n/universe/stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "node-slack-notify",
+      "name": "Slack Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1250, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channel": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "text": "={{ '[Finance] Universe sync complete\\n' + '• Total tickers: ' + JSON.stringify($json.data?.total || 'N/A') + '\\n' + '• Tiers: ' + JSON.stringify($json.data?.tier_counts || {}) + '\\n' + '• Latest price date: ' + ($json.data?.price_coverage?.latest_date || 'N/A') }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Sunday Midnight ET": {
+      "main": [
+        [
+          {
+            "node": "Load Universe Tickers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Universe Tickers": {
+      "main": [
+        [
+          {
+            "node": "Update Screener Prices",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Reference Prices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Screener Prices": {
+      "main": [
+        [
+          {
+            "node": "Get Universe Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Reference Prices": {
+      "main": [
+        [
+          {
+            "node": "Get Universe Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Universe Stats": {
+      "main": [
+        [
+          {
+            "node": "Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}]

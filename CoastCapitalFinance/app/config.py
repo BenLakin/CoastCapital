@@ -78,6 +78,12 @@ class Settings(BaseSettings):
     # Default watchlist
     DEFAULT_WATCHLIST: str = "AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA,JPM,BAC,WFC,SPY,QQQ"
 
+    # Universe expansion
+    UNIVERSE_BATCH_SIZE: int = 100       # tickers per yf.download() call
+    UNIVERSE_BATCH_DELAY: float = 2.0    # seconds between batches
+    EODHD_API_TOKEN: Optional[str] = None
+    KAGGLE_DATA_DIR: str = "/app/data/kaggle"
+
     @property
     def watchlist(self) -> list[str]:
         return [t.strip().upper() for t in self.DEFAULT_WATCHLIST.split(",")]

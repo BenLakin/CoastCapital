@@ -270,6 +270,8 @@ CREATE TABLE IF NOT EXISTS `dim_stock` (
   `country`             VARCHAR(50)    DEFAULT 'USA',
   `currency`            VARCHAR(10)    DEFAULT 'USD',
   `market_cap_category` ENUM('Nano','Micro','Small','Mid','Large','Mega') NULL,
+  `stock_tier`          ENUM('watchlist','screener','reference') NOT NULL DEFAULT 'reference',
+  `cik`                 VARCHAR(20)    NULL,
   `is_active`           TINYINT(1)     NOT NULL DEFAULT 1,
   `is_etf`              TINYINT(1)     NOT NULL DEFAULT 0,
   `ipo_date`            DATE           NULL,
@@ -278,7 +280,8 @@ CREATE TABLE IF NOT EXISTS `dim_stock` (
   `updated_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE INDEX `uq_ticker` (`ticker`),
   INDEX `ix_sector` (`sector`),
-  INDEX `ix_active` (`is_active`)
+  INDEX `ix_active` (`is_active`),
+  INDEX `ix_stock_tier` (`stock_tier`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── dim_date ────────────────────────────────────────────────────────────────
@@ -571,6 +574,25 @@ CREATE TABLE IF NOT EXISTS `fact_stock_split` (
   `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `ix_split_stock_date` (`stock_id`, `split_date`),
   FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─── fact_bulk_load_log ──────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `fact_bulk_load_log` (
+  `load_id`           BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `source`            VARCHAR(100)   NOT NULL,
+  `file_name`         VARCHAR(500)   NULL,
+  `tickers_loaded`    INT            DEFAULT 0,
+  `rows_loaded`       INT            DEFAULT 0,
+  `rows_skipped`      INT            DEFAULT 0,
+  `rows_errored`      INT            DEFAULT 0,
+  `start_date`        DATE           NULL,
+  `end_date`          DATE           NULL,
+  `duration_sec`      DOUBLE         NULL,
+  `status`            ENUM('running','success','error') DEFAULT 'running',
+  `error_message`     TEXT           NULL,
+  `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at`      DATETIME       NULL,
+  INDEX `ix_bulk_load_source` (`source`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

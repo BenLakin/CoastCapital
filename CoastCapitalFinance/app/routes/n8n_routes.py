@@ -13,6 +13,14 @@ Endpoints:
   GET  /n8n/watchlist            → Get current watchlist
   POST /n8n/watchlist/add        → Add ticker to watchlist
   GET  /n8n/health               → Health check
+
+  Universe expansion:
+  POST /n8n/universe/load        → Load tickers from SEC EDGAR + NASDAQ Trader
+  GET  /n8n/universe/stats       → Universe stats by tier
+  POST /n8n/universe/promote     → Move tickers between tiers
+  POST /n8n/universe/bulk-price-load → Import CSV/parquet price files
+  POST /n8n/screener/update      → Batch price + technicals for screener tier
+  POST /n8n/reference/update     → Batch price update for reference tier
 """
 import json
 import os
@@ -437,6 +445,260 @@ def holdings_analyze():
         return success_response(result)
     except Exception as e:
         logger.error("Holdings analysis error", error=str(e))
+        return error_response(str(e))
+
+
+# ---------------------------------------------------------------------------
+# Universe expansion routes
+# ---------------------------------------------------------------------------
+
+@n8n_bp.route("/universe/load", methods=["POST"])
+@require_n8n_auth
+def universe_load():
+    """
+    Load tickers from SEC EDGAR + NASDAQ Trader into dim_stock.
+    3 HTTP requests total, zero yfinance calls.
+
+    Body (optional):
+      {
+        "sources": ["sec_edgar", "nasdaq_trader"]  // default: both
+      }
+    """
+    from app.pipelines.universe_loader import load_full_universe
+    from app.models.database import get_db
+
+    logger.info("n8n universe/load triggered")
+
+    try:
+        with get_db() as db:
+            result = load_full_universe(db)
+        return success_response(result)
+    except Exception as e:
+        logger.error("Universe load error", error=str(e), exc_info=True)
+        return error_response(str(e))
+
+
+@n8n_bp.route("/universe/stats", methods=["GET"])
+@require_n8n_auth
+def universe_stats():
+    """
+    Get universe statistics by tier.
+
+    Returns:
+      {
+        "tier_counts": {"watchlist": 12, "screener": 500, "reference": 9000},
+        "total": 9512,
+        "last_load": "2025-01-15T10:30:00"
+      }
+    """
+    from app.models.database import get_db
+    from sqlalchemy import text
+
+    try:
+        with get_db() as db:
+            # Tier counts
+            tier_rows = db.execute(text(
+                "SELECT stock_tier, COUNT(*) as cnt, "
+                "SUM(is_etf) as etf_count "
+                "FROM dim_stock WHERE is_active = 1 GROUP BY stock_tier"
+            )).fetchall()
+
+            tier_counts = {}
+            etf_counts = {}
+            for row in tier_rows:
+                tier_counts[row[0]] = row[1]
+                etf_counts[row[0]] = int(row[2] or 0)
+
+            # Last bulk load
+            last_load = db.execute(text(
+                "SELECT source, status, tickers_loaded, rows_loaded, duration_sec, created_at "
+                "FROM fact_bulk_load_log ORDER BY created_at DESC LIMIT 5"
+            )).fetchall()
+
+            recent_loads = [{
+                "source": r[0], "status": r[1],
+                "tickers_loaded": r[2], "rows_loaded": r[3],
+                "duration_sec": r[4], "created_at": str(r[5]),
+            } for r in last_load]
+
+            # Price data coverage
+            price_stats = db.execute(text(
+                "SELECT COUNT(DISTINCT stock_id) as stocks_with_prices, "
+                "COUNT(*) as total_price_rows, "
+                "MIN(trade_date) as earliest, MAX(trade_date) as latest "
+                "FROM fact_stock_price"
+            )).fetchone()
+
+            return success_response({
+                "tier_counts": tier_counts,
+                "etf_counts": etf_counts,
+                "total": sum(tier_counts.values()),
+                "recent_loads": recent_loads,
+                "price_coverage": {
+                    "stocks_with_prices": price_stats[0] if price_stats else 0,
+                    "total_price_rows": price_stats[1] if price_stats else 0,
+                    "earliest_date": str(price_stats[2]) if price_stats and price_stats[2] else None,
+                    "latest_date": str(price_stats[3]) if price_stats and price_stats[3] else None,
+                },
+            })
+    except Exception as e:
+        logger.error("Universe stats error", error=str(e))
+        return error_response(str(e))
+
+
+@n8n_bp.route("/universe/promote", methods=["POST"])
+@require_n8n_auth
+def universe_promote():
+    """
+    Move tickers between tiers.
+
+    Body:
+      {
+        "tickers": ["AAPL", "MSFT"],
+        "target_tier": "screener"  // "watchlist", "screener", "reference"
+      }
+    """
+    from app.models.database import get_db
+    from sqlalchemy import text
+
+    body = request.get_json(silent=True) or {}
+    tickers = [t.upper().strip() for t in body.get("tickers", [])]
+    target_tier = body.get("target_tier", "").lower()
+
+    if not tickers:
+        return error_response("No tickers provided", 400)
+    if target_tier not in ("watchlist", "screener", "reference"):
+        return error_response("target_tier must be: watchlist, screener, or reference", 400)
+
+    try:
+        with get_db() as db:
+            placeholders = ", ".join([f":t{i}" for i in range(len(tickers))])
+            params = {f"t{i}": t for i, t in enumerate(tickers)}
+            params["tier"] = target_tier
+
+            result = db.execute(
+                text(f"UPDATE dim_stock SET stock_tier = :tier WHERE ticker IN ({placeholders})"),
+                params,
+            )
+            updated = result.rowcount
+
+        return success_response({
+            "updated": updated,
+            "tickers": tickers,
+            "target_tier": target_tier,
+        })
+    except Exception as e:
+        logger.error("Universe promote error", error=str(e))
+        return error_response(str(e))
+
+
+@n8n_bp.route("/universe/bulk-price-load", methods=["POST"])
+@require_n8n_auth
+def universe_bulk_price_load():
+    """
+    Import prices from CSV/parquet files (e.g. Kaggle datasets).
+
+    Body:
+      {
+        "file_path": "/app/data/kaggle/AAPL.csv",      // single file
+        "directory": "/app/data/kaggle/stocks/",        // OR entire directory
+        "mapping": "kaggle_huge",                       // column mapping preset
+        "chunk_size": 10000                             // rows per batch
+      }
+    """
+    from app.pipelines.bulk_price_loader import load_price_csv, load_directory
+    from app.models.database import get_db
+
+    body = request.get_json(silent=True) or {}
+    file_path = body.get("file_path")
+    directory = body.get("directory")
+    mapping_name = body.get("mapping", "kaggle_huge")
+    chunk_size = int(body.get("chunk_size", 10000))
+
+    if not file_path and not directory:
+        return error_response("Provide 'file_path' or 'directory'", 400)
+
+    try:
+        with get_db() as db:
+            if directory:
+                result = load_directory(
+                    directory=directory, db=db,
+                    mapping_name=mapping_name, chunk_size=chunk_size,
+                )
+            else:
+                result = load_price_csv(
+                    file_path=file_path, db=db,
+                    mapping_name=mapping_name, chunk_size=chunk_size,
+                )
+        return success_response(result)
+    except Exception as e:
+        logger.error("Bulk price load error", error=str(e), exc_info=True)
+        return error_response(str(e))
+
+
+@n8n_bp.route("/screener/update", methods=["POST"])
+@require_n8n_auth
+def screener_update():
+    """
+    Batch price + technicals update for screener-tier tickers.
+
+    Body (optional):
+      {
+        "days_back": 5,        // calendar days to fetch (default 5)
+        "batch_size": 100      // tickers per yf.download call
+      }
+    """
+    from app.pipelines.batch_price_update import run_daily_universe_update
+    from app.pipelines.backfill import backfill_by_tier
+    from app.models.database import get_db
+
+    body = request.get_json(silent=True) or {}
+    days_back = int(body.get("days_back", 5))
+    full_backfill = body.get("full_backfill", False)
+
+    logger.info("n8n screener/update triggered", days_back=days_back)
+
+    try:
+        if full_backfill:
+            result = backfill_by_tier(
+                tier="screener",
+                batch_size=int(body.get("batch_size", 100)),
+            )
+        else:
+            with get_db() as db:
+                result = run_daily_universe_update(tier="screener", db=db, days_back=days_back)
+        return success_response(result)
+    except Exception as e:
+        logger.error("Screener update error", error=str(e), exc_info=True)
+        return error_response(str(e))
+
+
+@n8n_bp.route("/reference/update", methods=["POST"])
+@require_n8n_auth
+def reference_update():
+    """
+    Batch price update for reference-tier tickers (prices only, no technicals).
+
+    Body (optional):
+      {
+        "days_back": 5,        // calendar days to fetch (default 5)
+        "batch_size": 100      // tickers per yf.download call
+      }
+    """
+    from app.pipelines.batch_price_update import run_daily_universe_update
+    from app.models.database import get_db
+
+    body = request.get_json(silent=True) or {}
+    days_back = int(body.get("days_back", 5))
+
+    logger.info("n8n reference/update triggered", days_back=days_back)
+
+    try:
+        with get_db() as db:
+            result = run_daily_universe_update(tier="reference", db=db, days_back=days_back)
+        return success_response(result)
+    except Exception as e:
+        logger.error("Reference update error", error=str(e), exc_info=True)
         return error_response(str(e))
 
 

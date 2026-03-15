@@ -45,6 +45,11 @@ class DimStock(Base):
     country = Column(String(50), default="USA")
     currency = Column(String(10), default="USD")
     market_cap_category = Column(Enum("Nano", "Micro", "Small", "Mid", "Large", "Mega"), nullable=True)
+    stock_tier = Column(
+        Enum("watchlist", "screener", "reference", name="stock_tier"),
+        nullable=False, default="reference", index=True,
+    )
+    cik = Column(String(20), nullable=True)  # SEC EDGAR Central Index Key
     is_active = Column(Boolean, default=True, nullable=False)
     is_etf = Column(Boolean, default=False, nullable=False)
     ipo_date = Column(Date, nullable=True)
@@ -553,3 +558,26 @@ class FactStockSplit(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
     stock = relationship("DimStock", back_populates="splits")
+
+
+class FactBulkLoadLog(Base):
+    """Tracks bulk data import jobs (Kaggle CSV, SEC EDGAR, NASDAQ Trader, etc.)."""
+    __tablename__ = "fact_bulk_load_log"
+    __table_args__ = (
+        Index("ix_bulk_load_source", "source"),
+    )
+
+    load_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    source = Column(String(100), nullable=False)       # "kaggle_csv", "sec_edgar", "nasdaq_trader", "yf_batch"
+    file_name = Column(String(500), nullable=True)     # CSV file path if applicable
+    tickers_loaded = Column(Integer, default=0)
+    rows_loaded = Column(Integer, default=0)
+    rows_skipped = Column(Integer, default=0)
+    rows_errored = Column(Integer, default=0)
+    start_date = Column(Date, nullable=True)           # date range of data loaded
+    end_date = Column(Date, nullable=True)
+    duration_sec = Column(Float, nullable=True)
+    status = Column(Enum("running", "success", "error", name="bulk_load_status"), default="running")
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    completed_at = Column(DateTime, nullable=True)
