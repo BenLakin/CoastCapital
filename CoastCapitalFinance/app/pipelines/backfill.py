@@ -158,13 +158,17 @@ def backfill_by_tier(
     """
     Tier-aware backfill:
       - watchlist:  Full per-ticker pipeline (prices, technicals, news, earnings, LLM)
-      - screener:  Batch prices + per-ticker technicals
-      - reference: Batch prices only
+      - screener:  Batch prices + per-ticker technicals (period="max" for full history)
+      - reference: Batch prices only (period="max" for full history)
+
+    For screener/reference tiers, uses yf.download(period="max") to pull all
+    available history for each ticker (back to IPO). This avoids needing
+    Kaggle CSVs and gets data through yesterday in one pass.
 
     Args:
         tier: "watchlist", "screener", or "reference"
-        start_date: Start date (default: DEFAULT_START_DATE)
-        end_date: End date (default: today)
+        start_date: Start date (default: DEFAULT_START_DATE, watchlist only)
+        end_date: End date (default: today, watchlist only)
         batch_size: Tickers per yf.download() batch (screener/reference only)
         use_llm: Enable LLM analysis (watchlist only, default False)
     """
@@ -173,7 +177,7 @@ def backfill_by_tier(
     end_date = end_date or date.today()
     start_date = start_date or DEFAULT_START_DATE
 
-    logger.info("Starting tier backfill", tier=tier, start=str(start_date), end=str(end_date))
+    logger.info("Starting tier backfill", tier=tier)
 
     with get_db() as db:
         # Get tickers for this tier
@@ -198,16 +202,17 @@ def backfill_by_tier(
             )
 
         elif tier == "screener":
-            # Batch prices + technicals
+            # Batch prices (full history) + technicals
             result = {"tier": tier}
 
-            # 1. Batch download prices
+            # 1. Batch download full price history via period="max"
             price_stats = batch_download_prices(
                 tickers=tickers,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=None,
+                end_date=None,
                 db=db,
                 batch_size=batch_size,
+                period="max",
             )
             result["price_stats"] = price_stats
 
@@ -216,7 +221,7 @@ def backfill_by_tier(
             tech_errors = 0
             for ticker in tickers:
                 try:
-                    compute_and_store_technicals(ticker, start_date, end_date, db)
+                    compute_and_store_technicals(ticker, DEFAULT_START_DATE, end_date, db)
                     tech_success += 1
                 except Exception as e:
                     tech_errors += 1
@@ -227,13 +232,14 @@ def backfill_by_tier(
             return result
 
         elif tier == "reference":
-            # Batch prices only
+            # Batch prices only — full history via period="max"
             price_stats = batch_download_prices(
                 tickers=tickers,
-                start_date=start_date,
-                end_date=end_date,
+                start_date=None,
+                end_date=None,
                 db=db,
                 batch_size=batch_size,
+                period="max",
             )
             return {"tier": tier, "price_stats": price_stats}
 

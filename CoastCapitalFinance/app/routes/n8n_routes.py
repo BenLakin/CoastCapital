@@ -682,20 +682,29 @@ def reference_update():
     Body (optional):
       {
         "days_back": 5,        // calendar days to fetch (default 5)
-        "batch_size": 100      // tickers per yf.download call
+        "batch_size": 100,     // tickers per yf.download call
+        "full_backfill": false // true = fetch full history (period=max)
       }
     """
     from app.pipelines.batch_price_update import run_daily_universe_update
+    from app.pipelines.backfill import backfill_by_tier
     from app.models.database import get_db
 
     body = request.get_json(silent=True) or {}
     days_back = int(body.get("days_back", 5))
+    full_backfill = body.get("full_backfill", False)
 
-    logger.info("n8n reference/update triggered", days_back=days_back)
+    logger.info("n8n reference/update triggered", days_back=days_back, full_backfill=full_backfill)
 
     try:
-        with get_db() as db:
-            result = run_daily_universe_update(tier="reference", db=db, days_back=days_back)
+        if full_backfill:
+            result = backfill_by_tier(
+                tier="reference",
+                batch_size=int(body.get("batch_size", 100)),
+            )
+        else:
+            with get_db() as db:
+                result = run_daily_universe_update(tier="reference", db=db, days_back=days_back)
         return success_response(result)
     except Exception as e:
         logger.error("Reference update error", error=str(e), exc_info=True)

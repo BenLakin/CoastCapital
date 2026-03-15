@@ -25,22 +25,25 @@ logger = get_logger(__name__)
 
 def batch_download_prices(
     tickers: list[str],
-    start_date: date,
-    end_date: date,
+    start_date: Optional[date],
+    end_date: Optional[date],
     db: Session,
     batch_size: Optional[int] = None,
     delay: Optional[float] = None,
+    period: Optional[str] = None,
 ) -> dict:
     """
     Download OHLCV for many tickers using yf.download() batching.
 
     Args:
         tickers: List of ticker symbols
-        start_date: Start date for price data
-        end_date: End date for price data
+        start_date: Start date for price data (None if using period)
+        end_date: End date for price data (None if using period)
         db: SQLAlchemy session
         batch_size: Tickers per API call (default from config)
         delay: Seconds between batches (default from config)
+        period: yfinance period string (e.g. "max", "1y", "5d").
+                If set, overrides start_date/end_date.
 
     Returns:
         Stats dict with counts of rows loaded, errors, etc.
@@ -81,6 +84,7 @@ def batch_download_prices(
         try:
             rows = _download_and_upsert_batch(
                 batch_tickers, start_date, end_date, ticker_to_id, db,
+                period=period,
             )
             stats["rows_loaded"] += rows["loaded"]
             stats["tickers_with_data"] += rows["tickers_with_data"]
@@ -120,25 +124,32 @@ def batch_download_prices(
 
 def _download_and_upsert_batch(
     tickers: list[str],
-    start_date: date,
-    end_date: date,
+    start_date: Optional[date],
+    end_date: Optional[date],
     ticker_to_id: dict,
     db: Session,
+    period: Optional[str] = None,
 ) -> dict:
     """Download a single batch of tickers via yf.download() and upsert prices."""
     result = {"loaded": 0, "tickers_with_data": 0, "tickers_no_data": 0}
 
     try:
+        # Build yf.download kwargs — use period OR start/end, not both
+        dl_kwargs = {
+            "tickers": tickers,
+            "auto_adjust": False,
+            "group_by": "ticker",
+            "threads": True,
+            "progress": False,
+        }
+        if period:
+            dl_kwargs["period"] = period
+        else:
+            dl_kwargs["start"] = str(start_date)
+            dl_kwargs["end"] = str(end_date)
+
         # yf.download returns a DataFrame with multi-level columns for multiple tickers
-        df = yf.download(
-            tickers=tickers,
-            start=str(start_date),
-            end=str(end_date),
-            auto_adjust=False,
-            group_by="ticker",
-            threads=True,
-            progress=False,
-        )
+        df = yf.download(**dl_kwargs)
     except Exception as e:
         logger.warning("yf.download failed for batch", error=str(e),
                        n_tickers=len(tickers))

@@ -2,7 +2,7 @@
   "id": "a1b2c3d4-1005-4000-8005-000000000005",
   "name": "Finance - Universe Sync",
   "active": true,
-  "versionId": "1",
+  "versionId": "2",
   "meta": {
     "instanceId": "coastcapital-n8n"
   },
@@ -22,7 +22,7 @@
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "notes": "Weekly universe sync: loads tickers from SEC EDGAR + NASDAQ Trader, updates screener-tier prices + technicals, updates reference-tier prices. Runs Sunday at midnight ET.",
+  "notes": "Weekly universe sync. Auto-detects first run: if no price data exists, runs full_backfill (period=max, all history back to IPO). Otherwise does incremental update (last 10 days). Flow: Schedule → Load tickers → Check stats → IF first run → full backfill / ELSE incremental → Stats → Slack.",
   "nodes": [
     {
       "id": "node-trigger",
@@ -65,11 +65,62 @@
       }
     },
     {
-      "id": "node-screener-update",
-      "name": "Update Screener Prices",
+      "id": "node-check-stats",
+      "name": "Check Price Coverage",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [750, 200],
+      "position": [750, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_finance:5000/n8n/universe/stats",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "node-if-first-run",
+      "name": "First Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-price-rows",
+              "leftValue": "={{ $json.data?.price_coverage?.total_price_rows ?? 0 }}",
+              "rightValue": 1000,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-full-screener",
+      "name": "Full Backfill Screener",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 150],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_finance:5000/n8n/screener/update",
@@ -79,29 +130,27 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "days_back",
-              "value": "10"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
         "options": {
-          "timeout": 3600000
+          "timeout": 43200000
         }
       }
     },
     {
-      "id": "node-reference-update",
-      "name": "Update Reference Prices",
+      "id": "node-full-reference",
+      "name": "Full Backfill Reference",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [750, 400],
+      "position": [1300, 300],
       "parameters": {
         "method": "POST",
         "url": "http://coast_capital_finance:5000/n8n/reference/update",
@@ -111,29 +160,87 @@
             {
               "name": "X-API-Key",
               "value": "={{ $env.API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
+        "specifyBody": "json",
+        "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
+        "options": {
+          "timeout": 43200000
+        }
+      }
+    },
+    {
+      "id": "node-incr-screener",
+      "name": "Incremental Screener",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 500],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/screener/update",
+        "sendHeaders": true,
+        "headerParameters": {
           "parameters": [
             {
-              "name": "days_back",
-              "value": "10"
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"days_back\": 10}",
+        "options": {
+          "timeout": 3600000
+        }
+      }
+    },
+    {
+      "id": "node-incr-reference",
+      "name": "Incremental Reference",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 650],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coast_capital_finance:5000/n8n/reference/update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"days_back\": 10}",
         "options": {
           "timeout": 7200000
         }
       }
     },
     {
-      "id": "node-get-stats",
-      "name": "Get Universe Stats",
+      "id": "node-final-stats",
+      "name": "Get Final Stats",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 300],
+      "position": [1600, 400],
       "parameters": {
         "method": "GET",
         "url": "http://coast_capital_finance:5000/n8n/universe/stats",
@@ -156,7 +263,7 @@
       "name": "Slack Summary",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
-      "position": [1250, 300],
+      "position": [1850, 400],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -165,7 +272,7 @@
           "value": "C0ALK9LU6H4",
           "mode": "id"
         },
-        "text": "={{ '[Finance] Universe sync complete\\n' + '• Total tickers: ' + JSON.stringify($json.data?.total || 'N/A') + '\\n' + '• Tiers: ' + JSON.stringify($json.data?.tier_counts || {}) + '\\n' + '• Latest price date: ' + ($json.data?.price_coverage?.latest_date || 'N/A') }}",
+        "text": "={{ '[Finance] Universe sync complete\\n' + '• Total tickers: ' + JSON.stringify($json.data?.total || 'N/A') + '\\n' + '• Tiers: ' + JSON.stringify($json.data?.tier_counts || {}) + '\\n' + '• Stocks with prices: ' + ($json.data?.price_coverage?.stocks_with_prices || 'N/A') + '\\n' + '• Total price rows: ' + ($json.data?.price_coverage?.total_price_rows || 'N/A') + '\\n' + '• Date range: ' + ($json.data?.price_coverage?.earliest_date || '?') + ' → ' + ($json.data?.price_coverage?.latest_date || '?') }}",
         "otherOptions": {}
       },
       "credentials": {
@@ -192,41 +299,97 @@
       "main": [
         [
           {
-            "node": "Update Screener Prices",
+            "node": "Check Price Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Price Coverage": {
+      "main": [
+        [
+          {
+            "node": "First Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Run?": {
+      "main": [
+        [
+          {
+            "node": "Full Backfill Screener",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Update Reference Prices",
+            "node": "Full Backfill Reference",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incremental Screener",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Incremental Reference",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update Screener Prices": {
+    "Full Backfill Screener": {
       "main": [
         [
           {
-            "node": "Get Universe Stats",
+            "node": "Get Final Stats",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update Reference Prices": {
+    "Full Backfill Reference": {
       "main": [
         [
           {
-            "node": "Get Universe Stats",
+            "node": "Get Final Stats",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Universe Stats": {
+    "Incremental Screener": {
+      "main": [
+        [
+          {
+            "node": "Get Final Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incremental Reference": {
+      "main": [
+        [
+          {
+            "node": "Get Final Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Final Stats": {
       "main": [
         [
           {
