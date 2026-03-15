@@ -1,0 +1,577 @@
+{
+  "id": "a1b2c3d4-5001-4000-800a-000000000023",
+  "name": "Platform - Docker Rebuild (Skip MySQL + N8N)",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    {
+      "id": "20",
+      "name": "platform"
+    },
+    {
+      "id": "24",
+      "name": "docker"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Rebuilds all Docker containers EXCEPT MySQL and N8N. Triggered via webhook or Slack dispatcher. Sequentially rebuilds Finance, HomeLab, Assistant, Sports, and Database APIs, waits 30s, health-checks all services, then reports success or failure to Slack.",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Rebuild Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "platform-docker-rebuild",
+      "parameters": {
+        "path": "platform-docker-rebuild",
+        "httpMethod": "POST",
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "node-slack-started",
+      "name": "Slack - Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        470,
+        300
+      ],
+      "parameters": {
+        "text": "[Platform] Docker rebuild started",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-rebuild-finance",
+      "name": "Rebuild - Finance",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        690,
+        300
+      ],
+      "parameters": {
+        "command": "docker compose -f /workspace/CoastCapitalFinance/docker-compose.yml up -d --build 2>&1"
+      }
+    },
+    {
+      "id": "node-rebuild-homelab",
+      "name": "Rebuild - HomeLab",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        910,
+        300
+      ],
+      "parameters": {
+        "command": "docker compose -f /workspace/CoastCapitalHomelab/docker-compose.yml up -d --build 2>&1"
+      }
+    },
+    {
+      "id": "node-rebuild-assistant",
+      "name": "Rebuild - Assistant",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1130,
+        300
+      ],
+      "parameters": {
+        "command": "docker compose -f /workspace/CoastCapitalPersonalAssistant/docker-compose.yml up -d --build 2>&1"
+      }
+    },
+    {
+      "id": "node-rebuild-sports",
+      "name": "Rebuild - Sports",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1350,
+        300
+      ],
+      "parameters": {
+        "command": "docker compose -f /workspace/CoastCapitalSports/docker-compose.yml up -d --build 2>&1"
+      }
+    },
+    {
+      "id": "node-rebuild-db-apis",
+      "name": "Rebuild - Database APIs",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1570,
+        300
+      ],
+      "parameters": {
+        "command": "docker compose -f /workspace/CoastCapitalDatabase/docker-compose.yml up -d --build maintenance-api 2>&1"
+      }
+    },
+    {
+      "id": "node-wait-30s",
+      "name": "Wait 30s for Startup",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1790,
+        300
+      ],
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "node-health-finance",
+      "name": "Health - Finance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2010,
+        100
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:5000/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-health-homelab",
+      "name": "Health - HomeLab",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2010,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coastcapital-homelab:5200/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-health-assistant",
+      "name": "Health - Assistant",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2010,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://host.docker.internal:5100/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-health-sports",
+      "name": "Health - Sports",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2010,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coastcapital-sports:5300/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-health-maintenance",
+      "name": "Health - Maintenance API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2010,
+        500
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coastcapital-db-maintenance:8080/health",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-aggregate",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2280,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const services = [\n  { name: 'Finance (5000)', data: $('Health - Finance').first().json },\n  { name: 'HomeLab (5200)', data: $('Health - HomeLab').first().json },\n  { name: 'Assistant (5100)', data: $('Health - Assistant').first().json },\n  { name: 'Sports (5300)', data: $('Health - Sports').first().json },\n  { name: 'Maintenance API (8080)', data: $('Health - Maintenance API').first().json },\n];\n\nconst succeeded = [];\nconst failed = [];\n\nfor (const svc of services) {\n  const ok = svc.data && svc.data.status === 'healthy';\n  if (ok) {\n    succeeded.push(svc.name);\n  } else {\n    const reason = svc.data?.error || svc.data?.status || 'Unreachable';\n    failed.push(`${svc.name}: ${reason}`);\n  }\n}\n\nconst allSuccess = failed.length === 0;\n\nlet details = '';\nif (failed.length > 0) {\n  details = 'Failed: ' + failed.join(', ') + '. Succeeded: ' + succeeded.join(', ');\n} else {\n  details = 'All services: ' + succeeded.join(', ');\n}\n\nreturn [{\n  json: {\n    all_success: allSuccess,\n    succeeded,\n    failed,\n    details,\n    succeeded_count: succeeded.length,\n    failed_count: failed.length\n  }\n}];"
+      }
+    },
+    {
+      "id": "node-check-result",
+      "name": "All Healthy?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2500,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "cond-all-success",
+              "leftValue": "={{ $json.all_success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-slack-success",
+      "name": "Slack - All Success",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2720,
+        200
+      ],
+      "parameters": {
+        "text": "[Platform] All containers rebuilt successfully",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-slack-failure",
+      "name": "Slack - Partial Failure",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2720,
+        400
+      ],
+      "parameters": {
+        "text": "=[Platform] Docker rebuild partially failed: {{ $json.details }}",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALHU9MADB",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-call-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2940,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"Platform - Docker Rebuild (Skip MySQL + N8N)\", \"module\": \"platform\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Rebuild Webhook": {
+      "main": [
+        [
+          {
+            "node": "Slack - Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Job Started": {
+      "main": [
+        [
+          {
+            "node": "Rebuild - Finance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild - Finance": {
+      "main": [
+        [
+          {
+            "node": "Rebuild - HomeLab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild - HomeLab": {
+      "main": [
+        [
+          {
+            "node": "Rebuild - Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild - Assistant": {
+      "main": [
+        [
+          {
+            "node": "Rebuild - Sports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild - Sports": {
+      "main": [
+        [
+          {
+            "node": "Rebuild - Database APIs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild - Database APIs": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s for Startup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s for Startup": {
+      "main": [
+        [
+          {
+            "node": "Health - Finance",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health - HomeLab",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health - Assistant",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health - Sports",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health - Maintenance API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health - Finance": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health - HomeLab": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health - Assistant": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health - Sports": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health - Maintenance API": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "All Healthy?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Healthy?": {
+      "main": [
+        [
+          {
+            "node": "Slack - All Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Partial Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Partial Failure": {
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Slack - Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

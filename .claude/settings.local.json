@@ -65,7 +65,8 @@
       "Bash(docker restart:*)",
       "Bash(docker ps:*)",
       "Bash(chmod +x /Volumes/CoastTechnology/CoastCapital/CoastCapitalN8N/fix-n8n-migrations.sh)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(python3 -c \"import sys,json; w=json.load\\(open\\(sys.argv[1]\\)\\); nodes=[n for n in w.get\\(''''nodes'''',[]\\) if ''''webhook'''' in n.get\\(''''type'''',''''''''\\).lower\\(\\)]; [print\\(n.get\\(''''type''''\\), n.get\\(''''parameters'''',{}\\).get\\(''''path'''',''''''''\\)\\) for n in nodes]\" /Volumes/CoastTechnology/CoastCapital/CoastCapitalN8N/workflows/sports/sports_daily_pipeline.json)"
     ]
   }
 }

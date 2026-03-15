@@ -67,6 +67,43 @@ def _infer_mysql_type(value) -> str:
 # Column synchronisation
 # ---------------------------------------------------------------------------
 
+def _table_exists(cursor, schema: str, table: str) -> bool:
+    """Return True if *schema.table* exists."""
+    cursor.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
+        "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+        (schema, table),
+    )
+    return cursor.fetchone()[0] > 0
+
+
+def _create_table(cursor, schema: str, table: str, data: dict) -> None:
+    """Create *schema.table* from the keys/values in *data*.
+
+    The first key in *data* is used as the primary key.  All column types
+    are inferred from the Python values via ``_infer_mysql_type``.
+    """
+    columns = list(data.keys())
+    col_defs = []
+    for col in columns:
+        col_type = _infer_mysql_type(data[col])
+        col_defs.append(f"`{col}` {col_type}")
+
+    pk = columns[0]
+    col_defs_str = ",\n  ".join(col_defs)
+    sql = (
+        f"CREATE TABLE `{schema}`.`{table}` (\n"
+        f"  {col_defs_str},\n"
+        f"  PRIMARY KEY (`{pk}`)\n"
+        f") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    )
+    cursor.execute(sql)
+    logger.info("schema_sync: created table %s.%s (%d columns)", schema, table, len(columns))
+
+    # Prime the column cache
+    _column_cache[(schema, table)] = set(columns)
+
+
 def _get_existing_columns(cursor, schema: str, table: str) -> set[str]:
     """Return the set of column names for *schema.table*, with caching."""
     key = (schema, table)
@@ -150,7 +187,10 @@ def dynamic_upsert(
         column in *data* (standard upsert pattern).  Set to ``False`` for
         append-only tables such as ``fact_market_odds``.
     """
-    sync_columns(cursor, schema, table, data)
+    if not _table_exists(cursor, schema, table):
+        _create_table(cursor, schema, table, data)
+    else:
+        sync_columns(cursor, schema, table, data)
 
     columns = list(data.keys())
     col_list = ", ".join(f"`{c}`" for c in columns)

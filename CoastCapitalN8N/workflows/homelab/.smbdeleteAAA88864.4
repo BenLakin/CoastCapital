@@ -1,0 +1,343 @@
+{
+  "id": "a1b2c3d4-2002-4000-8005-000000000005",
+  "name": "HomeLab - Daily Infrastructure Report",
+  "active": true,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    {
+      "id": "4",
+      "name": "homelab"
+    },
+    {
+      "id": "2",
+      "name": "daily"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Runs daily at 8:00 AM ET. Aggregates last 24h of infrastructure metrics (CPU, memory, disk, container status), compiles a digest, and sends it via Slack and email.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Daily 8:00 AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        500
+      ],
+      "webhookId": "homelab-report-webhook",
+      "parameters": {
+        "path": "/webhook/homelab-report",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        420,
+        300
+      ],
+      "parameters": {
+        "text": "[HomeLab] Daily Infrastructure Report workflow started at {{ $now.toISO() }}",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-get-health",
+      "name": "GET /api/health-summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        620,
+        200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_homelab:5001/api/health-summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-homelab-webhook",
+          "name": "HomeLab Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-get-containers",
+      "name": "GET /api/docker-status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        620,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://coast_capital_homelab:5001/api/docker-status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-homelab-webhook",
+          "name": "HomeLab Webhook Auth"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "node-build-report",
+      "name": "Build Daily Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        840,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "report",
+              "name": "report_text",
+              "value": "=[HomeLab] CoastCapital Infrastructure Daily Report\nDate: {{ $now.format('yyyy-MM-dd') }}\n\nSee execution output for full metrics.",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-slack-report",
+      "name": "Slack - Daily Digest",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1060,
+        200
+      ],
+      "parameters": {
+        "text": "={{ $json.report_text }}",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALQUT54PN",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-email-report",
+      "name": "Email - Daily Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1060,
+        400
+      ],
+      "parameters": {
+        "fromEmail": "homelab@coastcapital.local",
+        "toEmail": "admin@coastcapital.local",
+        "subject": "=[HomeLab] CoastCapital Infrastructure Report - {{ $now.format('yyyy-MM-dd') }}",
+        "text": "={{ $json.report_text }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "cred-smtp",
+          "name": "CoastCapital SMTP"
+        }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1060,
+        550
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"HomeLab - Daily Infrastructure Report\", \"module\": \"homelab\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-a1b2c3d4",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Daily 8:00 AM ET": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Started": {
+      "main": [
+        [
+          {
+            "node": "GET /api/health-summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET /api/docker-status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /api/health-summary": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET /api/docker-status": {
+      "main": [
+        [
+          {
+            "node": "Build Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Daily Report": {
+      "main": [
+        [
+          {
+            "node": "Slack - Daily Digest",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email - Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Daily Digest": {
+      "main": []
+    },
+    "Email - Daily Digest": {
+      "main": []
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

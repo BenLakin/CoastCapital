@@ -73,7 +73,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://coast_capital_finance:5000/health",
+        "url": "http://host.docker.internal:5000/health",
         "options": {
           "timeout": 5000
         }
@@ -91,7 +91,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-homelab:5000/health",
+        "url": "http://host.docker.internal:5200/health",
         "options": {
           "timeout": 5000
         }
@@ -109,7 +109,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-assistant:5000/health",
+        "url": "http://host.docker.internal:5100/health",
         "options": {
           "timeout": 5000
         }
@@ -127,7 +127,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-sports:5000/health",
+        "url": "http://host.docker.internal:5300/health",
         "options": {
           "timeout": 5000
         }
@@ -145,7 +145,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-db-maintenance:8080/health",
+        "url": "http://host.docker.internal:8080/health",
         "options": {
           "timeout": 5000
         }

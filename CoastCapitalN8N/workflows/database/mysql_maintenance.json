@@ -187,7 +187,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -226,7 +226,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -265,7 +265,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -304,7 +304,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/recommendations",
+        "url": "http://host.docker.internal:8080/maintenance/recommendations",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -410,7 +410,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -449,7 +449,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/health-snapshot",
+        "url": "http://host.docker.internal:8080/maintenance/health-snapshot",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -498,7 +498,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -537,7 +537,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://coastcapital-db-maintenance:8080/maintenance/run",
+        "url": "http://host.docker.internal:8080/maintenance/run",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
