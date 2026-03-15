@@ -111,14 +111,14 @@ def load_nasdaq_trader_tickers(db: Session) -> dict:
     try:
         # --- NASDAQ-listed ---
         logger.info("Downloading NASDAQ listed tickers")
-        resp = requests.get(NASDAQ_LISTED_URL, timeout=30)
+        resp = requests.get(NASDAQ_LISTED_URL, timeout=60)
         resp.raise_for_status()
         nasdaq_tickers = _parse_nasdaq_listed(resp.text)
         stats["nasdaq"] = len(nasdaq_tickers)
 
         # --- Other exchanges (NYSE, AMEX, ARCA, BATS) ---
         logger.info("Downloading other exchange tickers")
-        resp = requests.get(NASDAQ_OTHER_URL, timeout=30)
+        resp = requests.get(NASDAQ_OTHER_URL, timeout=60)
         resp.raise_for_status()
         other_tickers = _parse_other_listed(resp.text)
         stats["other"] = len(other_tickers)
@@ -234,16 +234,17 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         prefix = f"p{idx}"
         values_parts.append(
             f"(:{prefix}_ticker, :{prefix}_name, :{prefix}_exchange, "
-            f":{prefix}_is_etf, :{prefix}_cik)"
+            f":{prefix}_is_etf, :{prefix}_cik, :{prefix}_is_active)"
         )
         params[f"{prefix}_ticker"] = row["ticker"]
         params[f"{prefix}_name"] = row.get("company_name", row["ticker"])
         params[f"{prefix}_exchange"] = row.get("exchange")
         params[f"{prefix}_is_etf"] = row.get("is_etf", False)
         params[f"{prefix}_cik"] = row.get("cik")
+        params[f"{prefix}_is_active"] = 1
 
     sql = f"""
-        INSERT INTO dim_stock (ticker, company_name, exchange, is_etf, cik)
+        INSERT INTO dim_stock (ticker, company_name, exchange, is_etf, cik, is_active)
         VALUES {', '.join(values_parts)}
         ON DUPLICATE KEY UPDATE
             company_name = IF(
