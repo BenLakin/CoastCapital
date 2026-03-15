@@ -15,12 +15,11 @@ Endpoints:
   GET  /n8n/health               → Health check
 
   Universe expansion:
-  POST /n8n/universe/load        → Load tickers from SEC EDGAR + NASDAQ Trader
+  POST /n8n/universe/load        → Load tickers from SEC EDGAR + NASDAQ + Twelve Data
   GET  /n8n/universe/stats       → Universe stats by tier
+  POST /n8n/universe/update      → Smart price update (per-stock: max or since last date)
   POST /n8n/universe/promote     → Move tickers between tiers
   POST /n8n/universe/bulk-price-load → Import CSV/parquet price files
-  POST /n8n/screener/update      → Batch price + technicals for screener tier
-  POST /n8n/reference/update     → Batch price update for reference tier
 """
 import json
 import os
@@ -486,7 +485,7 @@ def universe_stats():
 
     Returns:
       {
-        "tier_counts": {"watchlist": 12, "screener": 500, "reference": 9000},
+        "tier_counts": {"watchlist": 12, "universe": 48000},
         "total": 9512,
         "last_load": "2025-01-15T10:30:00"
       }
@@ -555,7 +554,7 @@ def universe_promote():
     Body:
       {
         "tickers": ["AAPL", "MSFT"],
-        "target_tier": "screener"  // "watchlist", "screener", "reference"
+        "target_tier": "universe"  // "watchlist" or "universe"
       }
     """
     from app.models.database import get_db
@@ -567,8 +566,8 @@ def universe_promote():
 
     if not tickers:
         return error_response("No tickers provided", 400)
-    if target_tier not in ("watchlist", "screener", "reference"):
-        return error_response("target_tier must be: watchlist, screener, or reference", 400)
+    if target_tier not in ("watchlist", "universe"):
+        return error_response("target_tier must be: watchlist or universe", 400)
 
     try:
         with get_db() as db:
@@ -636,78 +635,33 @@ def universe_bulk_price_load():
         return error_response(str(e))
 
 
-@n8n_bp.route("/screener/update", methods=["POST"])
+@n8n_bp.route("/universe/update", methods=["POST"])
 @require_n8n_auth
-def screener_update():
+def universe_update():
     """
-    Batch price + technicals update for screener-tier tickers.
+    Smart price update for all non-watchlist tickers.
+
+    Per-stock logic:
+      - No price history → fetches ALL history (period="max", back to IPO)
+      - Has price history → fetches from last trade date to today
 
     Body (optional):
       {
-        "days_back": 5,        // calendar days to fetch (default 5)
         "batch_size": 100      // tickers per yf.download call
       }
     """
-    from app.pipelines.batch_price_update import run_daily_universe_update
-    from app.pipelines.backfill import backfill_by_tier
-    from app.models.database import get_db
+    from app.pipelines.batch_price_update import smart_universe_update
 
     body = request.get_json(silent=True) or {}
-    days_back = int(body.get("days_back", 5))
-    full_backfill = body.get("full_backfill", False)
+    batch_size = int(body.get("batch_size", 100))
 
-    logger.info("n8n screener/update triggered", days_back=days_back)
-
-    try:
-        if full_backfill:
-            result = backfill_by_tier(
-                tier="screener",
-                batch_size=int(body.get("batch_size", 100)),
-            )
-        else:
-            with get_db() as db:
-                result = run_daily_universe_update(tier="screener", db=db, days_back=days_back)
-        return success_response(result)
-    except Exception as e:
-        logger.error("Screener update error", error=str(e), exc_info=True)
-        return error_response(str(e))
-
-
-@n8n_bp.route("/reference/update", methods=["POST"])
-@require_n8n_auth
-def reference_update():
-    """
-    Batch price update for reference-tier tickers (prices only, no technicals).
-
-    Body (optional):
-      {
-        "days_back": 5,        // calendar days to fetch (default 5)
-        "batch_size": 100,     // tickers per yf.download call
-        "full_backfill": false // true = fetch full history (period=max)
-      }
-    """
-    from app.pipelines.batch_price_update import run_daily_universe_update
-    from app.pipelines.backfill import backfill_by_tier
-    from app.models.database import get_db
-
-    body = request.get_json(silent=True) or {}
-    days_back = int(body.get("days_back", 5))
-    full_backfill = body.get("full_backfill", False)
-
-    logger.info("n8n reference/update triggered", days_back=days_back, full_backfill=full_backfill)
+    logger.info("n8n universe/update triggered", batch_size=batch_size)
 
     try:
-        if full_backfill:
-            result = backfill_by_tier(
-                tier="reference",
-                batch_size=int(body.get("batch_size", 100)),
-            )
-        else:
-            with get_db() as db:
-                result = run_daily_universe_update(tier="reference", db=db, days_back=days_back)
+        result = smart_universe_update(batch_size=batch_size)
         return success_response(result)
     except Exception as e:
-        logger.error("Reference update error", error=str(e), exc_info=True)
+        logger.error("Universe update error", error=str(e), exc_info=True)
         return error_response(str(e))
 
 

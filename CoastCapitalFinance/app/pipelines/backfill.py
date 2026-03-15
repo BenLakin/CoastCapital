@@ -4,8 +4,7 @@ Handles: OHLCV, technical indicators, news, earnings, macro, and split restateme
 
 Supports tiered backfill:
   - watchlist:  Full pipeline (prices, technicals, news, earnings, splits, LLM)
-  - screener:  Prices + technicals (batch download, no LLM)
-  - reference: Prices only (batch download)
+  - universe:   Smart price update (per-stock: max or since last date)
 """
 from datetime import date, timedelta
 from typing import Optional
@@ -158,90 +157,41 @@ def backfill_by_tier(
     """
     Tier-aware backfill:
       - watchlist:  Full per-ticker pipeline (prices, technicals, news, earnings, LLM)
-      - screener:  Batch prices + per-ticker technicals (period="max" for full history)
-      - reference: Batch prices only (period="max" for full history)
-
-    For screener/reference tiers, uses yf.download(period="max") to pull all
-    available history for each ticker (back to IPO). This avoids needing
-    Kaggle CSVs and gets data through yesterday in one pass.
+      - universe:   Smart per-stock update via smart_universe_update()
 
     Args:
-        tier: "watchlist", "screener", or "reference"
+        tier: "watchlist" or "universe"
         start_date: Start date (default: DEFAULT_START_DATE, watchlist only)
         end_date: End date (default: today, watchlist only)
-        batch_size: Tickers per yf.download() batch (screener/reference only)
+        batch_size: Tickers per yf.download() batch (universe only)
         use_llm: Enable LLM analysis (watchlist only, default False)
     """
-    from app.pipelines.batch_price_update import batch_download_prices
+    from app.pipelines.batch_price_update import smart_universe_update
 
     end_date = end_date or date.today()
     start_date = start_date or DEFAULT_START_DATE
 
     logger.info("Starting tier backfill", tier=tier)
 
-    with get_db() as db:
-        # Get tickers for this tier
-        rows = db.execute(
-            text("SELECT ticker FROM dim_stock WHERE stock_tier = :tier AND is_active = 1"),
-            {"tier": tier},
-        ).fetchall()
-        tickers = [r[0] for r in rows]
+    if tier == "watchlist":
+        with get_db() as db:
+            rows = db.execute(
+                text("SELECT ticker FROM dim_stock WHERE stock_tier = 'watchlist' AND is_active = 1"),
+            ).fetchall()
+            tickers = [r[0] for r in rows]
 
         if not tickers:
-            return {"tier": tier, "tickers": 0, "message": "No tickers found for tier"}
+            return {"tier": tier, "tickers": 0, "message": "No watchlist tickers found"}
 
-        logger.info("Found tickers for tier", tier=tier, count=len(tickers))
+        return backfill_watchlist(
+            tickers=tickers,
+            start_date=start_date,
+            end_date=end_date,
+            use_llm=use_llm,
+        )
 
-        if tier == "watchlist":
-            # Full pipeline — use existing per-ticker backfill
-            return backfill_watchlist(
-                tickers=tickers,
-                start_date=start_date,
-                end_date=end_date,
-                use_llm=use_llm,
-            )
+    elif tier == "universe":
+        return smart_universe_update(batch_size=batch_size)
 
-        elif tier == "screener":
-            # Batch prices (full history) + technicals
-            result = {"tier": tier}
-
-            # 1. Batch download full price history via period="max"
-            price_stats = batch_download_prices(
-                tickers=tickers,
-                start_date=None,
-                end_date=None,
-                db=db,
-                batch_size=batch_size,
-                period="max",
-            )
-            result["price_stats"] = price_stats
-
-            # 2. Compute technicals for each ticker (needs per-ticker processing)
-            tech_success = 0
-            tech_errors = 0
-            for ticker in tickers:
-                try:
-                    compute_and_store_technicals(ticker, DEFAULT_START_DATE, end_date, db)
-                    tech_success += 1
-                except Exception as e:
-                    tech_errors += 1
-                    if tech_errors <= 5:
-                        logger.debug("Technicals failed", ticker=ticker, error=str(e))
-
-            result["technicals"] = {"success": tech_success, "errors": tech_errors}
-            return result
-
-        elif tier == "reference":
-            # Batch prices only — full history via period="max"
-            price_stats = batch_download_prices(
-                tickers=tickers,
-                start_date=None,
-                end_date=None,
-                db=db,
-                batch_size=batch_size,
-                period="max",
-            )
-            return {"tier": tier, "price_stats": price_stats}
-
-        else:
-            raise ValueError(f"Unknown tier: {tier}. Expected: watchlist, screener, reference")
+    else:
+        raise ValueError(f"Unknown tier: {tier}. Expected: watchlist, universe")

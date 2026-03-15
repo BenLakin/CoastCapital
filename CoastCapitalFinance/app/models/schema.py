@@ -46,8 +46,8 @@ class DimStock(Base):
     currency = Column(String(10), default="USD")
     market_cap_category = Column(Enum("Nano", "Micro", "Small", "Mid", "Large", "Mega"), nullable=True)
     stock_tier = Column(
-        Enum("watchlist", "screener", "reference", name="stock_tier"),
-        nullable=False, default="reference", index=True,
+        Enum("watchlist", "universe", name="stock_tier"),
+        nullable=False, default="universe", index=True,
     )
     cik = Column(String(20), nullable=True)  # SEC EDGAR Central Index Key
     is_active = Column(Boolean, default=True, nullable=False)

@@ -293,46 +293,92 @@ def _get_ticker_id_map(tickers: list[str], db: Session) -> dict:
     return ticker_map
 
 
-def run_daily_universe_update(
-    tier: str = "reference",
+def smart_universe_update(
     db: Optional[Session] = None,
-    days_back: int = 5,
+    batch_size: int = 100,
 ) -> dict:
     """
-    Run a daily price update for all tickers of a given tier.
+    Smart price update for all non-watchlist tickers.
 
-    Uses period="5d" equivalent (5 most recent trading days) to catch
-    any gaps from weekends/holidays.
+    Per-stock logic:
+      - No price history → yf.download(period="max") to get all history back to IPO
+      - Has price history → yf.download(start=last_trade_date) to fill the gap
+
+    Groups tickers by status for efficient batch downloading.
 
     Args:
-        tier: "reference", "screener", or "watchlist"
         db: SQLAlchemy session (created if None)
-        days_back: Number of calendar days to fetch (default 5 = 1 trading week)
+        batch_size: Tickers per yf.download() batch (default 100)
     """
-    end_date = date.today()
-    start_date = end_date - timedelta(days=days_back)
-
     def _run(session):
-        # Get all active tickers for this tier
-        rows = session.execute(
-            text("SELECT ticker FROM dim_stock WHERE stock_tier = :tier AND is_active = 1"),
-            {"tier": tier},
-        ).fetchall()
-        tickers = [r[0] for r in rows]
+        # Get all active non-watchlist tickers with their last price date
+        rows = session.execute(text("""
+            SELECT ds.ticker, MAX(fsp.trade_date) as last_date
+            FROM dim_stock ds
+            LEFT JOIN fact_stock_price fsp ON ds.stock_id = fsp.stock_id
+            WHERE ds.stock_tier != 'watchlist' AND ds.is_active = 1
+            GROUP BY ds.ticker
+        """)).fetchall()
 
-        if not tickers:
-            logger.info("No tickers found for tier", tier=tier)
-            return {"tier": tier, "tickers": 0, "message": "No tickers found"}
+        if not rows:
+            logger.info("No universe tickers found")
+            return {"tickers": 0, "message": "No universe tickers found"}
 
-        logger.info("Starting daily universe update", tier=tier, n_tickers=len(tickers))
-        stats = batch_download_prices(
-            tickers=tickers,
-            start_date=start_date,
-            end_date=end_date,
-            db=session,
-        )
-        stats["tier"] = tier
-        return stats
+        # Split into no-history vs has-history
+        no_history = []
+        has_history = []
+        for ticker, last_date in rows:
+            if last_date is None:
+                no_history.append(ticker)
+            else:
+                has_history.append((ticker, last_date))
+
+        logger.info("Smart universe update",
+                     total=len(rows),
+                     no_history=len(no_history),
+                     has_history=len(has_history))
+
+        result = {
+            "total_tickers": len(rows),
+            "no_history_count": len(no_history),
+            "has_history_count": len(has_history),
+        }
+
+        # 1. No-history tickers: full backfill with period="max"
+        if no_history:
+            logger.info("Backfilling tickers with no history",
+                         count=len(no_history))
+            full_stats = batch_download_prices(
+                tickers=no_history,
+                start_date=None,
+                end_date=None,
+                db=session,
+                batch_size=batch_size,
+                period="max",
+            )
+            result["full_backfill"] = full_stats
+
+        # 2. Has-history tickers: fetch from their oldest last_date to today
+        if has_history:
+            tickers_to_update = [t for t, _ in has_history]
+            # Use the oldest last_date as start — upsert handles duplicates
+            oldest_last = min(d for _, d in has_history)
+            start_date = oldest_last - timedelta(days=1)  # overlap by 1 day for safety
+            end_date = date.today()
+
+            logger.info("Updating tickers with history",
+                         count=len(tickers_to_update),
+                         start=str(start_date), end=str(end_date))
+            incr_stats = batch_download_prices(
+                tickers=tickers_to_update,
+                start_date=start_date,
+                end_date=end_date,
+                db=session,
+                batch_size=batch_size,
+            )
+            result["incremental"] = incr_stats
+
+        return result
 
     if db:
         return _run(db)

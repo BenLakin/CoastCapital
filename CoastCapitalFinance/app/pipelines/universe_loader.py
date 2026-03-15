@@ -315,7 +315,7 @@ def load_international_tickers(db: Session) -> dict:
 def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
     """
     Bulk upsert stocks into dim_stock using INSERT ... ON DUPLICATE KEY UPDATE.
-    Preserves existing stock_tier (doesn't downgrade watchlist to reference).
+    Preserves existing stock_tier (doesn't downgrade watchlist to universe).
     """
     if not batch:
         return
@@ -335,7 +335,7 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         params[f"{prefix}_is_etf"] = row.get("is_etf", False)
         params[f"{prefix}_cik"] = row.get("cik")
         params[f"{prefix}_is_active"] = 1
-        params[f"{prefix}_stock_tier"] = row.get("stock_tier", "reference")
+        params[f"{prefix}_stock_tier"] = row.get("stock_tier", "universe")
         params[f"{prefix}_country"] = row.get("country", "USA")
         params[f"{prefix}_currency"] = row.get("currency", "USD")
 
@@ -388,7 +388,16 @@ def load_full_universe(db: Session) -> dict:
     except Exception as e:
         results["international_error"] = str(e)
 
-    # 4. Ensure watchlist tickers are marked as 'watchlist' tier
+    # 4. Migrate any legacy 'screener'/'reference' tiers to 'universe'
+    migrated = db.execute(
+        text("UPDATE dim_stock SET stock_tier = 'universe' WHERE stock_tier IN ('screener', 'reference')")
+    ).rowcount
+    if migrated:
+        db.flush()
+        results["legacy_tiers_migrated"] = migrated
+        logger.info("Migrated legacy tiers to universe", count=migrated)
+
+    # 5. Ensure watchlist tickers are marked as 'watchlist' tier
     watchlist_tickers = settings.watchlist
     if watchlist_tickers:
         placeholders = ", ".join([f":wl{i}" for i in range(len(watchlist_tickers))])
@@ -400,7 +409,7 @@ def load_full_universe(db: Session) -> dict:
         db.flush()
         results["watchlist_marked"] = len(watchlist_tickers)
 
-    # 5. Get tier counts
+    # 6. Get tier counts
     tier_counts = {}
     for row in db.execute(text(
         "SELECT stock_tier, COUNT(*) as cnt FROM dim_stock WHERE is_active = 1 GROUP BY stock_tier"

@@ -2,7 +2,7 @@
   "id": "a1b2c3d4-1005-4000-8005-000000000005",
   "name": "Finance - Universe Sync",
   "active": true,
-  "versionId": "2",
+  "versionId": "3",
   "meta": {
     "instanceId": "coastcapital-n8n"
   },
@@ -22,7 +22,7 @@
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "notes": "Daily universe sync at 6AM ET. Auto-detects first run: if no price data exists, runs full_backfill (period=max, all history back to IPO). Otherwise does incremental update (last 10 days). Flow: Schedule → Load tickers → Check stats → IF first run → full backfill / ELSE incremental → Stats → Slack.",
+  "notes": "Daily universe sync at 6AM ET. Loads ~48K tickers (SEC EDGAR + NASDAQ + Twelve Data international), then smart-updates prices per stock: no history → full backfill (period=max), has history → fetch since last trade date. Flow: Schedule → Load tickers → Smart Update → Stats → Slack.",
   "nodes": [
     {
       "id": "node-trigger",
@@ -65,65 +65,14 @@
       }
     },
     {
-      "id": "node-check-stats",
-      "name": "Check Price Coverage",
+      "id": "node-smart-update",
+      "name": "Smart Price Update",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [750, 300],
-      "parameters": {
-        "method": "GET",
-        "url": "http://coast_capital_finance:5000/n8n/universe/stats",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-API-Key",
-              "value": "={{ $env.API_KEY }}"
-            }
-          ]
-        },
-        "options": {
-          "timeout": 30000
-        }
-      }
-    },
-    {
-      "id": "node-if-first-run",
-      "name": "First Run?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1000, 300],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "condition-price-rows",
-              "leftValue": "={{ $json.data?.price_coverage?.total_price_rows ?? 0 }}",
-              "rightValue": 1000,
-              "operator": {
-                "type": "number",
-                "operation": "lt"
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "node-full-screener",
-      "name": "Full Backfill Screener",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1300, 150],
+      "position": [800, 300],
       "parameters": {
         "method": "POST",
-        "url": "http://coast_capital_finance:5000/n8n/screener/update",
+        "url": "http://coast_capital_finance:5000/n8n/universe/update",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -139,99 +88,9 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
+        "jsonBody": "={\"batch_size\": 100}",
         "options": {
           "timeout": 86400000
-        }
-      }
-    },
-    {
-      "id": "node-full-reference",
-      "name": "Full Backfill Reference",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1300, 300],
-      "parameters": {
-        "method": "POST",
-        "url": "http://coast_capital_finance:5000/n8n/reference/update",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-API-Key",
-              "value": "={{ $env.API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"full_backfill\": true, \"batch_size\": 100}",
-        "options": {
-          "timeout": 86400000
-        }
-      }
-    },
-    {
-      "id": "node-incr-screener",
-      "name": "Incremental Screener",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1300, 500],
-      "parameters": {
-        "method": "POST",
-        "url": "http://coast_capital_finance:5000/n8n/screener/update",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-API-Key",
-              "value": "={{ $env.API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"days_back\": 10}",
-        "options": {
-          "timeout": 14400000
-        }
-      }
-    },
-    {
-      "id": "node-incr-reference",
-      "name": "Incremental Reference",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1300, 650],
-      "parameters": {
-        "method": "POST",
-        "url": "http://coast_capital_finance:5000/n8n/reference/update",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-API-Key",
-              "value": "={{ $env.API_KEY }}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"days_back\": 10}",
-        "options": {
-          "timeout": 14400000
         }
       }
     },
@@ -240,7 +99,7 @@
       "name": "Get Final Stats",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1600, 400],
+      "position": [1100, 300],
       "parameters": {
         "method": "GET",
         "url": "http://coast_capital_finance:5000/n8n/universe/stats",
@@ -263,7 +122,7 @@
       "name": "Slack Summary",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
-      "position": [1850, 400],
+      "position": [1400, 300],
       "parameters": {
         "resource": "message",
         "operation": "post",
@@ -299,86 +158,14 @@
       "main": [
         [
           {
-            "node": "Check Price Coverage",
+            "node": "Smart Price Update",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Price Coverage": {
-      "main": [
-        [
-          {
-            "node": "First Run?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "First Run?": {
-      "main": [
-        [
-          {
-            "node": "Full Backfill Screener",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Full Backfill Reference",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Incremental Screener",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Incremental Reference",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Full Backfill Screener": {
-      "main": [
-        [
-          {
-            "node": "Get Final Stats",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Full Backfill Reference": {
-      "main": [
-        [
-          {
-            "node": "Get Final Stats",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Incremental Screener": {
-      "main": [
-        [
-          {
-            "node": "Get Final Stats",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Incremental Reference": {
+    "Smart Price Update": {
       "main": [
         [
           {

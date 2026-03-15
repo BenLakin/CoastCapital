@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS `dim_stock` (
   `country`             VARCHAR(50)    DEFAULT 'USA',
   `currency`            VARCHAR(10)    DEFAULT 'USD',
   `market_cap_category` ENUM('Nano','Micro','Small','Mid','Large','Mega') NULL,
-  `stock_tier`          ENUM('watchlist','screener','reference') NOT NULL DEFAULT 'reference',
+  `stock_tier`          ENUM('watchlist','universe') NOT NULL DEFAULT 'universe',
   `cik`                 VARCHAR(20)    NULL,
   `is_active`           TINYINT(1)     NOT NULL DEFAULT 1,
   `is_etf`              TINYINT(1)     NOT NULL DEFAULT 0,
