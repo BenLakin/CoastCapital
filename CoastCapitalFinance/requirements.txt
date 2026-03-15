@@ -9,7 +9,7 @@ pymysql==1.1.1
 # Stock data sources
 yfinance==0.2.48
 pandas==2.2.3
-numpy==2.0.2
+numpy==1.26.4
 
 # Technical analysis
 ta==0.11.0
