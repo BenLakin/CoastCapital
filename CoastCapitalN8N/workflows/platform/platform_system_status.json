@@ -181,8 +181,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-current-status",
-          "mode": "name"
+          "value": "C0AL5TR8EUF",
+          "mode": "id"
         }
       },
       "credentials": {

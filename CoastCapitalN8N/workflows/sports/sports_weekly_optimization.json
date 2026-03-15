@@ -77,8 +77,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-jobs-fyi",
-          "mode": "name"
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
         }
       },
       "credentials": {
@@ -163,8 +163,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-recent-summaries",
-          "mode": "name"
+          "value": "C0ALQUT54PN",
+          "mode": "id"
         }
       },
       "credentials": {
@@ -190,8 +190,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-action-needed",
-          "mode": "name"
+          "value": "C0ALHU9MADB",
+          "mode": "id"
         }
       },
       "credentials": {
@@ -240,8 +240,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-jobs-fyi",
-          "mode": "name"
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
         }
       },
       "id": "job-complete-a1b2c3d4",

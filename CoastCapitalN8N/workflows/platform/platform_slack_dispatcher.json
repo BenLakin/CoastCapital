@@ -193,8 +193,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-action-needed",
-          "mode": "name"
+          "value": "C0ALHU9MADB",
+          "mode": "id"
         }
       },
       "credentials": {
@@ -218,8 +218,8 @@
         "otherOptions": {},
         "channelId": {
           "__rl": true,
-          "value": "#coast-action-needed",
-          "mode": "name"
+          "value": "C0ALHU9MADB",
+          "mode": "id"
         }
       },
       "credentials": {
