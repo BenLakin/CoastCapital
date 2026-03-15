@@ -75,7 +75,11 @@
         "operation": "post",
         "text": "[HomeLab] Daily Infrastructure Report workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -174,7 +178,11 @@
         "operation": "post",
         "text": "={{ $json.report_text }}",
         "otherOptions": {},
-        "channel": "coast-recent-summaries"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-recent-summaries",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

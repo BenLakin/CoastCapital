@@ -99,7 +99,11 @@
       "parameters": {
         "text": "=[Platform] Error handler triggered for {{ $json.body.workflow_name || 'unknown' }} ({{ $json.body.module || 'unknown' }})",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -359,7 +363,11 @@
       "parameters": {
         "text": "=[Platform] \ud83d\udd27 Auto-fix MR created for *{{ $('Capture Error Details').item.json.workflow_name }}* ({{ $('Capture Error Details').item.json.module }})\\nDiagnosed by {{ $('Capture Error Details').item.json.module === 'finance' ? 'FinanceAgent' : $('Capture Error Details').item.json.module === 'homelab' ? 'HomeLabAgent' : $('Capture Error Details').item.json.module === 'assistant' ? 'AssistantAgent' : 'ArchitectureAgent' }}\\nBranch: `{{ $('Capture Error Details').item.json.branch_name }}`",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

@@ -179,7 +179,11 @@
         "operation": "post",
         "text": "={{ $json.message }}",
         "otherOptions": {},
-        "channel": "coast-current-status"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-current-status",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

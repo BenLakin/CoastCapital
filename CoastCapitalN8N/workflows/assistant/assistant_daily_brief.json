@@ -75,7 +75,11 @@
         "operation": "post",
         "text": "[Assistant] Daily Morning Brief workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -219,7 +223,11 @@
         "operation": "post",
         "text": "=[Assistant] Good morning!\n\n{{ $json.brief || 'Morning brief generation in progress...' }}",
         "otherOptions": {},
-        "channel": "coast-recent-summaries"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-recent-summaries",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

@@ -79,7 +79,11 @@
         "operation": "post",
         "text": "[HomeLab] Health Check workflow started at {{ $now.toISO() }}",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -248,7 +252,11 @@
         "operation": "post",
         "text": "=[HomeLab] :rotating_light: Service Health Check FAILED\nTime: {{ $now.toISO() }}\nCheck n8n execution log for details.",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -295,7 +303,11 @@
         "operation": "post",
         "text": "=[HomeLab] :white_check_mark: *Platform - Health Check (5 min)* completed successfully\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "id": "job-complete-a1b2c3d4",
       "name": "Slack - Job Complete",

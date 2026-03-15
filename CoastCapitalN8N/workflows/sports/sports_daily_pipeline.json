@@ -75,7 +75,11 @@
         "operation": "post",
         "text": "=[Sports] Job started: Sports - Daily Pipeline ({{ $now.format('yyyy-MM-dd') }})",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -181,7 +185,11 @@
         "operation": "post",
         "text": "={{ $json.message }}",
         "otherOptions": {},
-        "channel": "coast-recent-summaries"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-recent-summaries",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -204,7 +212,11 @@
         "operation": "post",
         "text": "=[Sports] :x: *Sports - Daily Pipeline (Ingest + Score + Bet)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

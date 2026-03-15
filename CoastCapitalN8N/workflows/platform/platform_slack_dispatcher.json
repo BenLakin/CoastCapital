@@ -191,7 +191,11 @@
       "parameters": {
         "text": "=\u2705 Got it! Dispatching *{{ $('MCP \u2014 Classify Intent').first().json.intent }}* ({{ Math.round($('MCP \u2014 Classify Intent').first().json.confidence * 100) }}% confidence)",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -212,7 +216,11 @@
       "parameters": {
         "text": "=\ud83e\udd14 {{ $('MCP \u2014 Classify Intent').first().json.clarification || \"I'm not sure what you'd like me to do. Could you rephrase?\" }}",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {

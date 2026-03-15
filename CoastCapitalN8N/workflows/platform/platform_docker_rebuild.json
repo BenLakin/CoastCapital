@@ -54,7 +54,11 @@
         "operation": "post",
         "text": "[Platform] Docker rebuild started",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -285,7 +289,11 @@
         "operation": "post",
         "text": "[Platform] All containers rebuilt successfully",
         "otherOptions": {},
-        "channel": "coast-jobs-fyi"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-jobs-fyi",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
@@ -308,7 +316,11 @@
         "operation": "post",
         "text": "=[Platform] Docker rebuild partially failed: {{ $json.details }}",
         "otherOptions": {},
-        "channel": "coast-action-needed"
+        "channelId": {
+          "__rl": true,
+          "value": "#coast-action-needed",
+          "mode": "name"
+        }
       },
       "credentials": {
         "slackApi": {
