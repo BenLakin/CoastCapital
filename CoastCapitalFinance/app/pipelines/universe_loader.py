@@ -41,7 +41,7 @@ def load_sec_edgar_tickers(db: Session) -> dict:
 
     try:
         logger.info("Downloading SEC EDGAR tickers")
-        resp = requests.get(SEC_EDGAR_URL, headers=SEC_HEADERS, timeout=30)
+        resp = requests.get(SEC_EDGAR_URL, headers=SEC_HEADERS, timeout=90)
         resp.raise_for_status()
         data = resp.json()
 
@@ -111,14 +111,14 @@ def load_nasdaq_trader_tickers(db: Session) -> dict:
     try:
         # --- NASDAQ-listed ---
         logger.info("Downloading NASDAQ listed tickers")
-        resp = requests.get(NASDAQ_LISTED_URL, timeout=60)
+        resp = requests.get(NASDAQ_LISTED_URL, timeout=90)
         resp.raise_for_status()
         nasdaq_tickers = _parse_nasdaq_listed(resp.text)
         stats["nasdaq"] = len(nasdaq_tickers)
 
         # --- Other exchanges (NYSE, AMEX, ARCA, BATS) ---
         logger.info("Downloading other exchange tickers")
-        resp = requests.get(NASDAQ_OTHER_URL, timeout=60)
+        resp = requests.get(NASDAQ_OTHER_URL, timeout=90)
         resp.raise_for_status()
         other_tickers = _parse_other_listed(resp.text)
         stats["other"] = len(other_tickers)
@@ -234,7 +234,8 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         prefix = f"p{idx}"
         values_parts.append(
             f"(:{prefix}_ticker, :{prefix}_name, :{prefix}_exchange, "
-            f":{prefix}_is_etf, :{prefix}_cik, :{prefix}_is_active)"
+            f":{prefix}_is_etf, :{prefix}_cik, :{prefix}_is_active, "
+            f":{prefix}_stock_tier, NOW(), NOW())"
         )
         params[f"{prefix}_ticker"] = row["ticker"]
         params[f"{prefix}_name"] = row.get("company_name", row["ticker"])
@@ -242,9 +243,11 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         params[f"{prefix}_is_etf"] = row.get("is_etf", False)
         params[f"{prefix}_cik"] = row.get("cik")
         params[f"{prefix}_is_active"] = 1
+        params[f"{prefix}_stock_tier"] = row.get("stock_tier", "reference")
 
     sql = f"""
-        INSERT INTO dim_stock (ticker, company_name, exchange, is_etf, cik, is_active)
+        INSERT INTO dim_stock (ticker, company_name, exchange, is_etf, cik, is_active,
+                               stock_tier, created_at, updated_at)
         VALUES {', '.join(values_parts)}
         ON DUPLICATE KEY UPDATE
             company_name = IF(
