@@ -1,0 +1,288 @@
+{
+  "id": "a1b2c3d4-5001-4000-800e-000000000020",
+  "name": "Finance - Stock History Backfill",
+  "active": false,
+  "versionId": "1",
+  "meta": {
+    "instanceId": "coastcapital-n8n"
+  },
+  "tags": [
+    {
+      "id": "1",
+      "name": "finance"
+    },
+    {
+      "id": "12",
+      "name": "backfill"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "notes": "Manual trigger only (active: false). Backfills all watchlist tickers with OHLCV, technicals, news, earnings, macro, and split data from 2010-01-01 to today. Also populates dim_stock and dim_date. Use for initial data loading or re-seeding after a rebuild.",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "node-webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        500
+      ],
+      "webhookId": "finance-stock-backfill-webhook",
+      "parameters": {
+        "path": "/webhook/finance-stock-backfill",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-job-started",
+      "name": "Job Started",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        470,
+        200
+      ],
+      "parameters": {
+        "text": "=[Finance] Job started: Finance - Stock History Backfill ({{ $now.format('yyyy-MM-dd') }})",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-backfill",
+      "name": "POST /n8n/backfill",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        690,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:5000/n8n/backfill",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"use_llm\": false}",
+        "options": {
+          "timeout": 43200000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cred-finance-webhook",
+          "name": "Finance Webhook Auth"
+        }
+      }
+    },
+    {
+      "id": "node-check-result",
+      "name": "Backfill Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        910,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-ok",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-slack-done",
+      "name": "Slack - Backfill Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1130,
+        100
+      ],
+      "parameters": {
+        "text": "=[Finance] :white_check_mark: *Stock History Backfill* complete\n*Tickers processed:* {{ $json.data.total_tickers || 'N/A' }}\n*Successful:* {{ $json.data.successful || 'N/A' }}\n*Failed:* {{ $json.data.failed || '0' }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALK9LU6H4",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-slack-error",
+      "name": "Slack - Backfill Failed",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1130,
+        350
+      ],
+      "parameters": {
+        "text": "=[Finance] :x: *Stock History Backfill* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+        "otherOptions": {},
+        "channelId": {
+          "__rl": true,
+          "value": "C0ALHU9MADB",
+          "mode": "id"
+        },
+        "select": "channel"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SOJFNoa56040Xc8Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "node-error-handler",
+      "name": "Call Error Handler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1350,
+        350
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"workflow_name\": \"Finance - Stock History Backfill\", \"module\": \"finance\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Job Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Started": {
+      "main": [
+        [
+          {
+            "node": "POST /n8n/backfill",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /n8n/backfill": {
+      "main": [
+        [
+          {
+            "node": "Backfill Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backfill Success?": {
+      "main": [
+        [
+          {
+            "node": "Slack - Backfill Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Backfill Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Backfill Failed": {
+      "main": [
+        [
+          {
+            "node": "Call Error Handler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

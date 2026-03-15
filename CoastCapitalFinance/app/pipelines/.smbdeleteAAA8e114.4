@@ -34,7 +34,7 @@ def backfill_ticker(
     Safe to re-run (idempotent — upserts on conflict).
     """
     end_date = end_date or date.today()
-    start_date = start_date or DEFAULT_START_DATE
+    start_date = start_date or (end_date - timedelta(days=365 * DEFAULT_HISTORY_YEARS))
 
     logger.info("Starting backfill", ticker=ticker, start=str(start_date), end=str(end_date))
     result = {"ticker": ticker, "status": "success", "details": {}}
@@ -92,19 +92,9 @@ def backfill_watchlist(
     Backfill multiple tickers. Also fetches macro data for the full range.
     """
     end_date = end_date or date.today()
-    start_date = start_date or DEFAULT_START_DATE
+    start_date = start_date or (end_date - timedelta(days=365 * DEFAULT_HISTORY_YEARS))
 
     results = {}
-
-    # Populate date dimension for the full range
-    logger.info("Populating date dimension", start=str(start_date), end=str(end_date))
-    try:
-        with get_db() as db:
-            populate_dim_date(start_date, end_date, db)
-            results["dim_date_populated"] = True
-    except Exception as e:
-        logger.error("Date dimension population failed", error=str(e))
-        results["dim_date_error"] = str(e)
 
     # Backfill macro data for the full range first
     logger.info("Backfilling macro indicators", start=str(start_date), end=str(end_date))
