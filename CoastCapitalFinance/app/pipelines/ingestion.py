@@ -35,7 +35,11 @@ logger = get_logger(__name__)
 def upsert_dim_stock(ticker: str, db: Session) -> DimStock:
     """Fetch stock metadata from yfinance and upsert into dim_stock."""
     yf_ticker = yf.Ticker(ticker)
-    info = yf_ticker.info or {}
+    try:
+        info = yf_ticker.info or {}
+    except Exception as e:
+        logger.warning("yfinance .info failed (likely rate-limited)", ticker=ticker, error=str(e))
+        info = {}
 
     market_cap = info.get("marketCap", 0) or 0
     if market_cap >= 200e9:
@@ -110,7 +114,7 @@ def populate_dim_date(start: date, end: date, db: Session) -> None:
 # Stock Price Ingestion
 # ---------------------------------------------------------------------------
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=2, min=4, max=30))
 def fetch_and_store_prices(
     ticker: str,
     start_date: date,
@@ -128,20 +132,28 @@ def fetch_and_store_prices(
     yf_ticker = yf.Ticker(ticker)
 
     # yfinance 'auto_adjust=True' applies split + dividend adjustments
-    hist = yf_ticker.history(
-        start=start_date.strftime("%Y-%m-%d"),
-        end=(end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
-        auto_adjust=True,  # gives adjusted prices
-        actions=True,       # includes Dividends + Stock Splits columns
-    )
+    try:
+        hist = yf_ticker.history(
+            start=start_date.strftime("%Y-%m-%d"),
+            end=(end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
+            auto_adjust=True,  # gives adjusted prices
+            actions=True,       # includes Dividends + Stock Splits columns
+        )
+    except json.JSONDecodeError as e:
+        logger.warning("yfinance returned empty/invalid JSON for price history", ticker=ticker, error=str(e))
+        raise  # let @retry handle it
 
     # Also fetch raw (unadjusted) for audit
-    hist_raw = yf_ticker.history(
-        start=start_date.strftime("%Y-%m-%d"),
-        end=(end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
-        auto_adjust=False,
-        actions=False,
-    )
+    try:
+        hist_raw = yf_ticker.history(
+            start=start_date.strftime("%Y-%m-%d"),
+            end=(end_date + timedelta(days=1)).strftime("%Y-%m-%d"),
+            auto_adjust=False,
+            actions=False,
+        )
+    except json.JSONDecodeError:
+        logger.warning("yfinance raw history failed, using adjusted only", ticker=ticker)
+        hist_raw = pd.DataFrame()
 
     if hist.empty:
         logger.warning("No price data returned", ticker=ticker, start=str(start_date))
@@ -239,7 +251,11 @@ def check_and_handle_splits(ticker: str, db: Session) -> list[dict]:
         return []
 
     yf_ticker = yf.Ticker(ticker)
-    hist = yf_ticker.history(period="max", auto_adjust=False, actions=True)
+    try:
+        hist = yf_ticker.history(period="max", auto_adjust=False, actions=True)
+    except Exception as e:
+        logger.warning("yfinance split history failed", ticker=ticker, error=str(e))
+        return []
 
     if hist.empty or "Stock Splits" not in hist.columns:
         return []
@@ -360,7 +376,11 @@ def fetch_and_store_news(
 
     # Source 1: yfinance news
     yf_ticker = yf.Ticker(ticker)
-    yf_news = yf_ticker.news or []
+    try:
+        yf_news = yf_ticker.news or []
+    except Exception as e:
+        logger.warning("yfinance news fetch failed", ticker=ticker, error=str(e))
+        yf_news = []
 
     for item in yf_news[:20]:
         published_ms = item.get("providerPublishTime", 0)

@@ -125,9 +125,9 @@ def backfill_watchlist(
             end_date=end_date,
             use_llm=use_llm,
         )
-        # Respect rate limits
+        # Respect Yahoo Finance rate limits (more aggressive to avoid blocking)
         import time
-        time.sleep(0.5)
+        time.sleep(2)
 
     results["tickers"] = ticker_results
     results["total_tickers"] = len(tickers)
