@@ -107,8 +107,8 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "cred-finance-webhook",
-          "name": "Finance Webhook Auth"
+          "id": "7NUHQU5ld1czCF4S",
+          "name": "Sports Webhook Auth"
         }
       },
       "onError": "continueErrorOutput"
@@ -250,8 +250,8 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "cred-finance-webhook",
-          "name": "Finance Webhook Auth"
+          "id": "7NUHQU5ld1czCF4S",
+          "name": "Sports Webhook Auth"
         }
       }
     },

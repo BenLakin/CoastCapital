@@ -1,7 +1,7 @@
 """
 n8n webhook routes — all endpoints designed for easy n8n HTTP Request node consumption.
 
-Authentication: Bearer token via N8N_WEBHOOK_SECRET env var.
+Authentication: X-API-Key header via API_KEY env var (same as all other modules).
 
 Endpoints:
   POST /n8n/daily-forecast       → Run daily pipeline, return top opportunities
@@ -15,8 +15,7 @@ Endpoints:
   GET  /n8n/health               → Health check
 """
 import json
-import hmac
-import hashlib
+import os
 from datetime import date
 from functools import wraps
 from flask import Blueprint, request, jsonify, current_app
@@ -30,6 +29,8 @@ n8n_bp = Blueprint("n8n", __name__, url_prefix="/n8n")
 # Dynamic watchlist (in-memory; persisted to DB in production)
 _dynamic_watchlist: list[str] = list(settings.watchlist)
 
+API_KEY = os.environ.get("API_KEY", "") or getattr(settings, "API_KEY", "")
+
 
 # ---------------------------------------------------------------------------
 # Auth middleware
@@ -38,15 +39,12 @@ _dynamic_watchlist: list[str] = list(settings.watchlist)
 def require_n8n_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not settings.N8N_WEBHOOK_SECRET:
-            # If no secret configured, allow all (dev mode)
+        if not API_KEY:
+            # If no key configured, allow all (dev mode)
             return f(*args, **kwargs)
 
-        token = request.headers.get("Authorization", "")
-        if token.startswith("Bearer "):
-            token = token[7:]
-
-        if token != settings.N8N_WEBHOOK_SECRET:
+        key = request.headers.get("X-API-Key") or request.args.get("api_key")
+        if key != API_KEY:
             logger.warning("Unauthorized n8n request", ip=request.remote_addr)
             return jsonify({"error": "Unauthorized"}), 401
 

@@ -70,7 +70,8 @@
       "Bash(grep -E \"\\\\.py$\")",
       "WebFetch(domain:scipy.org)",
       "Bash(/tmp/numpy_analysis.txt:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(grep -l \"Finance Webhook Auth\" CoastCapitalN8N/workflows/finance/*.json)"
     ]
   }
 }
