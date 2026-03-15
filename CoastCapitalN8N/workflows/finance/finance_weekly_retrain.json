@@ -1,4 +1,4 @@
-{
+[{
   "id": "a1b2c3d4-1002-4000-8002-000000000002",
   "name": "Finance - Weekly Model Retrain",
   "active": true,
@@ -337,4 +337,4 @@
       ]
     }
   }
-}
+}]

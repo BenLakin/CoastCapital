@@ -1,4 +1,4 @@
-{
+[{
   "id": "a1b2c3d4-1001-4000-8001-000000000001",
   "name": "Finance - Daily Forecast",
   "active": true,
@@ -407,4 +407,4 @@
       ]
     }
   }
-}
+}]

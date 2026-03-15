@@ -1,398 +1,400 @@
-{
-  "id": "a1b2c3d4-3001-4000-8006-000000000006",
-  "name": "Assistant - Daily Morning Brief",
-  "active": true,
-  "versionId": "1",
-  "meta": {
-    "instanceId": "coastcapital-n8n"
-  },
-  "tags": [
-    {
-      "id": "6",
-      "name": "assistant"
+[
+  {
+    "id": "a1b2c3d4-3001-4000-8006-000000000006",
+    "name": "Assistant - Daily Morning Brief",
+    "active": true,
+    "versionId": "1",
+    "meta": {
+      "instanceId": "coastcapital-n8n"
     },
-    {
-      "id": "2",
-      "name": "daily"
-    }
-  ],
-  "settings": {
-    "executionOrder": "v1",
-    "timezone": "America/New_York",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
-  },
-  "notes": "Runs daily at 7:00 AM ET. Pulls today's calendar events, pending tasks, and news highlights, then uses the Assistant API to generate an AI-powered morning brief. Delivers via Slack and email.",
-  "nodes": [
-    {
-      "id": "node-trigger",
-      "name": "Daily 7:00 AM ET",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        250,
-        300
-      ],
-      "parameters": {
-        "rule": {
-          "interval": [
+    "tags": [
+      {
+        "id": "6",
+        "name": "assistant"
+      },
+      {
+        "id": "2",
+        "name": "daily"
+      }
+    ],
+    "settings": {
+      "executionOrder": "v1",
+      "timezone": "America/New_York",
+      "saveManualExecutions": true,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "notes": "Runs daily at 7:00 AM ET. Pulls today's calendar events, pending tasks, and news highlights, then uses the Assistant API to generate an AI-powered morning brief. Delivers via Slack and email.",
+    "nodes": [
+      {
+        "id": "node-trigger",
+        "name": "Daily 7:00 AM ET",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          250,
+          300
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "cronExpression",
+                "expression": "0 7 * * *"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "node-webhook-trigger",
+        "name": "Webhook Trigger",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1.1,
+        "position": [
+          250,
+          600
+        ],
+        "webhookId": "assistant-brief-webhook",
+        "parameters": {
+          "path": "/webhook/assistant-brief",
+          "httpMethod": "POST",
+          "responseMode": "onReceived",
+          "options": {}
+        }
+      },
+      {
+        "id": "node-job-started",
+        "name": "Job Started",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          420,
+          300
+        ],
+        "parameters": {
+          "text": "[Assistant] Daily Morning Brief workflow started at {{ $now.toISO() }}",
+          "otherOptions": {},
+          "channelId": {
+            "__rl": true,
+            "value": "C0ALK9LU6H4",
+            "mode": "id"
+          },
+          "select": "channel"
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "SOJFNoa56040Xc8Q",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "id": "node-get-calendar",
+        "name": "GET /api/calendar/today",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          620,
+          150
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "http://host.docker.internal:5100/api/calendar/today",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "cred-assistant-webhook",
+            "name": "Assistant Webhook Auth"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "node-get-tasks",
+        "name": "GET /api/tasks/pending",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          620,
+          350
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "http://host.docker.internal:5100/api/tasks/pending",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "cred-assistant-webhook",
+            "name": "Assistant Webhook Auth"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "node-get-news",
+        "name": "GET /api/news/highlights",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          620,
+          550
+        ],
+        "parameters": {
+          "method": "GET",
+          "url": "http://host.docker.internal:5100/api/news/highlights",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "cred-assistant-webhook",
+            "name": "Assistant Webhook Auth"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "node-generate-brief",
+        "name": "POST /api/morning-brief",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          840,
+          350
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "http://host.docker.internal:5100/api/morning-brief",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "include_calendar",
+                "value": true
+              },
+              {
+                "name": "include_tasks",
+                "value": true
+              },
+              {
+                "name": "include_news",
+                "value": true
+              }
+            ]
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "cred-assistant-webhook",
+            "name": "Assistant Webhook Auth"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "node-slack-brief",
+        "name": "Slack - Morning Brief",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [
+          1060,
+          250
+        ],
+        "parameters": {
+          "text": "=[Assistant] Good morning!\n\n{{ $json.brief || 'Morning brief generation in progress...' }}",
+          "otherOptions": {},
+          "channelId": {
+            "__rl": true,
+            "value": "C0ALQUT54PN",
+            "mode": "id"
+          },
+          "select": "channel"
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "SOJFNoa56040Xc8Q",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "id": "node-email-brief",
+        "name": "Email - Morning Brief",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2.1,
+        "position": [
+          1060,
+          450
+        ],
+        "parameters": {
+          "fromEmail": "assistant@coastcapital.local",
+          "toEmail": "admin@coastcapital.local",
+          "subject": "=[Assistant] Morning Brief - {{ $now.format('EEEE, MMMM d') }}",
+          "text": "=[Assistant] {{ $json.brief || 'See Slack for details' }}",
+          "options": {}
+        },
+        "credentials": {
+          "smtp": {
+            "id": "cred-smtp",
+            "name": "CoastCapital SMTP"
+          }
+        }
+      },
+      {
+        "id": "node-error-handler",
+        "name": "Call Error Handler",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1060,
+          600
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"workflow_name\": \"Assistant - Daily Morning Brief\", \"module\": \"assistant\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "parameters": {},
+        "id": "manual-trigger-a1b2c3d4",
+        "name": "Manual Trigger",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          250,
+          100
+        ]
+      }
+    ],
+    "connections": {
+      "Daily 7:00 AM ET": {
+        "main": [
+          [
             {
-              "field": "cronExpression",
-              "expression": "0 7 * * *"
+              "node": "Job Started",
+              "type": "main",
+              "index": 0
             }
           ]
-        }
-      }
-    },
-    {
-      "id": "node-webhook-trigger",
-      "name": "Webhook Trigger",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1.1,
-      "position": [
-        250,
-        600
-      ],
-      "webhookId": "assistant-brief-webhook",
-      "parameters": {
-        "path": "/webhook/assistant-brief",
-        "httpMethod": "POST",
-        "responseMode": "onReceived",
-        "options": {}
-      }
-    },
-    {
-      "id": "node-job-started",
-      "name": "Job Started",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        420,
-        300
-      ],
-      "parameters": {
-        "text": "[Assistant] Daily Morning Brief workflow started at {{ $now.toISO() }}",
-        "otherOptions": {},
-        "channelId": {
-          "__rl": true,
-          "value": "C0ALK9LU6H4",
-          "mode": "id"
-        },
-        "select": "channel"
+        ]
       },
-      "credentials": {
-        "slackApi": {
-          "id": "SOJFNoa56040Xc8Q",
-          "name": "Slack account"
-        }
-      }
-    },
-    {
-      "id": "node-get-calendar",
-      "name": "GET /api/calendar/today",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        620,
-        150
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "http://host.docker.internal:5100/api/calendar/today",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "cred-assistant-webhook",
-          "name": "Assistant Webhook Auth"
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "id": "node-get-tasks",
-      "name": "GET /api/tasks/pending",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        620,
-        350
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "http://host.docker.internal:5100/api/tasks/pending",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "cred-assistant-webhook",
-          "name": "Assistant Webhook Auth"
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "id": "node-get-news",
-      "name": "GET /api/news/highlights",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        620,
-        550
-      ],
-      "parameters": {
-        "method": "GET",
-        "url": "http://host.docker.internal:5100/api/news/highlights",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "cred-assistant-webhook",
-          "name": "Assistant Webhook Auth"
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "id": "node-generate-brief",
-      "name": "POST /api/morning-brief",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        840,
-        350
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:5100/api/morning-brief",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
+      "Webhook Trigger": {
+        "main": [
+          [
             {
-              "name": "include_calendar",
-              "value": true
-            },
-            {
-              "name": "include_tasks",
-              "value": true
-            },
-            {
-              "name": "include_news",
-              "value": true
+              "node": "Job Started",
+              "type": "main",
+              "index": 0
             }
           ]
-        },
-        "options": {
-          "timeout": 60000
-        }
+        ]
       },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "cred-assistant-webhook",
-          "name": "Assistant Webhook Auth"
-        }
+      "Job Started": {
+        "main": [
+          [
+            {
+              "node": "GET /api/calendar/today",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "GET /api/tasks/pending",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "GET /api/news/highlights",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       },
-      "continueOnFail": true
-    },
-    {
-      "id": "node-slack-brief",
-      "name": "Slack - Morning Brief",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.3,
-      "position": [
-        1060,
-        250
-      ],
-      "parameters": {
-        "text": "=[Assistant] Good morning!\n\n{{ $json.brief || 'Morning brief generation in progress...' }}",
-        "otherOptions": {},
-        "channelId": {
-          "__rl": true,
-          "value": "C0ALQUT54PN",
-          "mode": "id"
-        },
-        "select": "channel"
+      "GET /api/calendar/today": {
+        "main": [
+          [
+            {
+              "node": "POST /api/morning-brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       },
-      "credentials": {
-        "slackApi": {
-          "id": "SOJFNoa56040Xc8Q",
-          "name": "Slack account"
-        }
+      "GET /api/tasks/pending": {
+        "main": [
+          [
+            {
+              "node": "POST /api/morning-brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "GET /api/news/highlights": {
+        "main": [
+          [
+            {
+              "node": "POST /api/morning-brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "POST /api/morning-brief": {
+        "main": [
+          [
+            {
+              "node": "Slack - Morning Brief",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Email - Morning Brief",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Trigger": {
+        "main": [
+          [
+            {
+              "node": "Job Started",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
-    },
-    {
-      "id": "node-email-brief",
-      "name": "Email - Morning Brief",
-      "type": "n8n-nodes-base.emailSend",
-      "typeVersion": 2.1,
-      "position": [
-        1060,
-        450
-      ],
-      "parameters": {
-        "fromEmail": "assistant@coastcapital.local",
-        "toEmail": "admin@coastcapital.local",
-        "subject": "=[Assistant] Morning Brief - {{ $now.format('EEEE, MMMM d') }}",
-        "text": "=[Assistant] {{ $json.brief || 'See Slack for details' }}",
-        "options": {}
-      },
-      "credentials": {
-        "smtp": {
-          "id": "cred-smtp",
-          "name": "CoastCapital SMTP"
-        }
-      }
-    },
-    {
-      "id": "node-error-handler",
-      "name": "Call Error Handler",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        1060,
-        600
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"workflow_name\": \"Assistant - Daily Morning Brief\", \"module\": \"assistant\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
-        "options": {
-          "timeout": 10000
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "parameters": {},
-      "id": "manual-trigger-a1b2c3d4",
-      "name": "Manual Trigger",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        250,
-        100
-      ]
-    }
-  ],
-  "connections": {
-    "Daily 7:00 AM ET": {
-      "main": [
-        [
-          {
-            "node": "Job Started",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Webhook Trigger": {
-      "main": [
-        [
-          {
-            "node": "Job Started",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Job Started": {
-      "main": [
-        [
-          {
-            "node": "GET /api/calendar/today",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "GET /api/tasks/pending",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "GET /api/news/highlights",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GET /api/calendar/today": {
-      "main": [
-        [
-          {
-            "node": "POST /api/morning-brief",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GET /api/tasks/pending": {
-      "main": [
-        [
-          {
-            "node": "POST /api/morning-brief",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GET /api/news/highlights": {
-      "main": [
-        [
-          {
-            "node": "POST /api/morning-brief",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "POST /api/morning-brief": {
-      "main": [
-        [
-          {
-            "node": "Slack - Morning Brief",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Email - Morning Brief",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Manual Trigger": {
-      "main": [
-        [
-          {
-            "node": "Job Started",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   }
-}
+]

@@ -1,4 +1,4 @@
-{
+[{
   "id": "a1b2c3d4-1003-4000-8003-000000000003",
   "name": "Finance - Watchlist Sync",
   "active": true,
@@ -408,4 +408,4 @@
       ]
     }
   }
-}
+}]

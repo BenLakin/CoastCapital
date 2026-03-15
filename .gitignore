@@ -32,6 +32,10 @@ n8n_data/
 .DS_Store
 Thumbs.db
 
+# SMB artifacts (created by macOS file sharing)
+.smbdelete*
+._*
+
 # Virtual environments
 venv/
 .venv/

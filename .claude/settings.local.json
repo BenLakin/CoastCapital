@@ -71,7 +71,10 @@
       "WebFetch(domain:scipy.org)",
       "Bash(/tmp/numpy_analysis.txt:*)",
       "Read(//tmp/**)",
-      "Bash(grep -l \"Finance Webhook Auth\" CoastCapitalN8N/workflows/finance/*.json)"
+      "Bash(grep -l \"Finance Webhook Auth\" CoastCapitalN8N/workflows/finance/*.json)",
+      "Bash(git ls-files:*)",
+      "Bash(xargs -r git rm --cached)",
+      "Bash(find /Volumes/CoastTechnology/CoastCapital -name .smbdelete* -not -path */mysql_data/* -not -path */n8n_data/* -not -path */.git/*)"
     ]
   }
 }
