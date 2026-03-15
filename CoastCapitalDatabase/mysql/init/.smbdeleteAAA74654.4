@@ -60,10 +60,6 @@ CREATE DATABASE IF NOT EXISTS `ncaa_mbb_internal`
 CREATE DATABASE IF NOT EXISTS `ncaa_mbb_gold`
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ─── SPORTS CROSS-CUTTING (modeling / ML features) ────────────────────
-CREATE DATABASE IF NOT EXISTS `modeling_silver`
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- ─── SPORTS DATABASES (Future sports — placeholder) ───────────────────
 CREATE DATABASE IF NOT EXISTS `nba_silver`
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -125,9 +121,6 @@ GRANT ALL PRIVILEGES ON `ncaa_mbb_silver`.*   TO 'dbadmin'@'%';
 GRANT ALL PRIVILEGES ON `ncaa_mbb_internal`.*  TO 'dbadmin'@'%';
 GRANT ALL PRIVILEGES ON `ncaa_mbb_gold`.*      TO 'dbadmin'@'%';
 
--- Sports (Modeling / ML)
-GRANT ALL PRIVILEGES ON `modeling_silver`.*  TO 'dbadmin'@'%';
-
 -- Sports (Future — placeholder grants)
 GRANT ALL PRIVILEGES ON `nba_silver`.*   TO 'dbadmin'@'%';
 GRANT ALL PRIVILEGES ON `nba_internal`.*  TO 'dbadmin'@'%';
@@ -159,7 +152,6 @@ GRANT SELECT ON `nfl_gold`.*      TO 'reporting'@'%';
 GRANT SELECT ON `ncaa_mbb_silver`.*   TO 'reporting'@'%';
 GRANT SELECT ON `ncaa_mbb_internal`.*  TO 'reporting'@'%';
 GRANT SELECT ON `ncaa_mbb_gold`.*      TO 'reporting'@'%';
-GRANT SELECT ON `modeling_silver`.*    TO 'reporting'@'%';
 
 GRANT SELECT ON `nba_silver`.*   TO 'reporting'@'%';
 GRANT SELECT ON `nba_internal`.*  TO 'reporting'@'%';
