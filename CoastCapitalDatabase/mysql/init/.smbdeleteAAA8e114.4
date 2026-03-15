@@ -253,9 +253,7 @@ ON DUPLICATE KEY UPDATE
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
--- FINANCE — Silver Layer
--- All finance tables live in finance_silver. SQLAlchemy models are the source
--- of truth; these DDL statements match schema.py exactly.
+-- FINANCE — Silver Layer (raw/cleaned data from external sources)
 -- ═══════════════════════════════════════════════════════════════════════════════
 USE `finance_silver`;
 
@@ -283,28 +281,31 @@ CREATE TABLE IF NOT EXISTS `dim_stock` (
 
 -- ─── dim_date ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `dim_date` (
-  `date_id`           INT            NOT NULL PRIMARY KEY COMMENT 'YYYYMMDD format',
-  `date`              DATE           NOT NULL,
+  `id`                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `date_key`          INT            NOT NULL COMMENT 'YYYYMMDD format',
+  `full_date`         DATE           NOT NULL,
   `year`              SMALLINT       NOT NULL,
-  `quarter`           SMALLINT       NOT NULL,
-  `month`             SMALLINT       NOT NULL,
+  `quarter`           TINYINT        NOT NULL,
+  `month`             TINYINT        NOT NULL,
   `month_name`        VARCHAR(10)    NOT NULL,
-  `week_of_year`      SMALLINT       NOT NULL,
-  `day_of_month`      SMALLINT       NOT NULL,
-  `day_of_week`       SMALLINT       NOT NULL COMMENT '0=Mon, 6=Sun',
+  `week_of_year`      TINYINT        NOT NULL,
+  `day_of_month`      TINYINT        NOT NULL,
+  `day_of_week`       TINYINT        NOT NULL COMMENT '0=Mon, 6=Sun',
   `day_name`          VARCHAR(10)    NOT NULL,
   `is_weekend`        TINYINT(1)     NOT NULL DEFAULT 0,
   `is_trading_day`    TINYINT(1)     NOT NULL DEFAULT 1,
   `is_quarter_end`    TINYINT(1)     NOT NULL DEFAULT 0,
   `is_year_end`       TINYINT(1)     NOT NULL DEFAULT 0,
-  `fiscal_quarter`    SMALLINT       NULL,
-  UNIQUE INDEX `uq_date` (`date`)
+  `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX `uq_date_key` (`date_key`),
+  UNIQUE INDEX `uq_full_date` (`full_date`),
+  INDEX `ix_year_month` (`year`, `month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_stock_price ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_stock_price` (
-  `price_id`            BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`            INT            NOT NULL,
+  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`            BIGINT UNSIGNED NOT NULL,
   `trade_date`          DATE           NOT NULL,
   `open_raw`            DECIMAL(18,6)  NULL,
   `high_raw`            DECIMAL(18,6)  NULL,
@@ -330,48 +331,45 @@ CREATE TABLE IF NOT EXISTS `fact_stock_price` (
   `created_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE INDEX `uq_stock_date` (`stock_id`, `trade_date`),
-  INDEX `ix_fact_stock_price_date` (`trade_date`),
-  INDEX `ix_fact_stock_price_stock_date` (`stock_id`, `trade_date`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_trade_date` (`trade_date`),
+  INDEX `ix_stock_trade_date` (`stock_id`, `trade_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_technical_indicator ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_technical_indicator` (
-  `indicator_id`        BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`            INT            NOT NULL,
+  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`            BIGINT UNSIGNED NOT NULL,
   `trade_date`          DATE           NOT NULL,
   -- Trend
-  `sma_5` DOUBLE NULL, `sma_10` DOUBLE NULL, `sma_20` DOUBLE NULL,
-  `sma_50` DOUBLE NULL, `sma_200` DOUBLE NULL,
-  `ema_9` DOUBLE NULL, `ema_12` DOUBLE NULL, `ema_26` DOUBLE NULL,
+  `sma_5`               DOUBLE NULL, `sma_10` DOUBLE NULL, `sma_20` DOUBLE NULL,
+  `sma_50`              DOUBLE NULL, `sma_200` DOUBLE NULL,
+  `ema_9`               DOUBLE NULL, `ema_12` DOUBLE NULL, `ema_26` DOUBLE NULL,
   -- Momentum
-  `rsi_14` DOUBLE NULL, `macd` DOUBLE NULL, `macd_signal` DOUBLE NULL,
-  `macd_histogram` DOUBLE NULL, `stoch_k` DOUBLE NULL, `stoch_d` DOUBLE NULL,
-  `williams_r` DOUBLE NULL, `roc_10` DOUBLE NULL, `roc_20` DOUBLE NULL,
+  `rsi_14`              DOUBLE NULL, `macd` DOUBLE NULL, `macd_signal` DOUBLE NULL,
+  `macd_histogram`      DOUBLE NULL, `stoch_k` DOUBLE NULL, `stoch_d` DOUBLE NULL,
+  `williams_r`          DOUBLE NULL, `roc_10` DOUBLE NULL, `roc_20` DOUBLE NULL,
   -- Volatility
-  `bb_upper` DOUBLE NULL, `bb_middle` DOUBLE NULL, `bb_lower` DOUBLE NULL,
-  `bb_pct_b` DOUBLE NULL, `bb_bandwidth` DOUBLE NULL,
-  `atr_14` DOUBLE NULL, `volatility_20d` DOUBLE NULL, `volatility_5d` DOUBLE NULL,
+  `bb_upper`            DOUBLE NULL, `bb_middle` DOUBLE NULL, `bb_lower` DOUBLE NULL,
+  `bb_pct_b`            DOUBLE NULL, `bb_bandwidth` DOUBLE NULL,
+  `atr_14`              DOUBLE NULL, `volatility_20d` DOUBLE NULL, `volatility_5d` DOUBLE NULL,
   -- Volume
-  `obv` DOUBLE NULL, `volume_sma_20` DOUBLE NULL, `volume_ratio` DOUBLE NULL,
-  `mfi_14` DOUBLE NULL, `cmf_20` DOUBLE NULL,
+  `obv`                 DOUBLE NULL, `volume_sma_20` DOUBLE NULL, `volume_ratio` DOUBLE NULL,
+  `mfi_14`              DOUBLE NULL, `cmf_20` DOUBLE NULL,
   -- Price position
-  `price_vs_sma50` DOUBLE NULL, `price_vs_sma200` DOUBLE NULL,
-  `price_vs_52w_high` DOUBLE NULL, `price_vs_52w_low` DOUBLE NULL,
-  `distance_to_support` DOUBLE NULL, `distance_to_resistance` DOUBLE NULL,
+  `price_vs_sma50`      DOUBLE NULL, `price_vs_sma200` DOUBLE NULL,
+  `price_vs_52w_high`   DOUBLE NULL, `price_vs_52w_low` DOUBLE NULL,
   -- Cross signals
-  `golden_cross` TINYINT(1) NULL, `macd_bullish` TINYINT(1) NULL,
-  `rsi_oversold` TINYINT(1) NULL, `rsi_overbought` TINYINT(1) NULL,
+  `golden_cross`        TINYINT(1) NULL, `macd_bullish` TINYINT(1) NULL,
+  `rsi_oversold`        TINYINT(1) NULL, `rsi_overbought` TINYINT(1) NULL,
   `created_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE INDEX `uq_tech_stock_date` (`stock_id`, `trade_date`),
-  INDEX `ix_fact_tech_date` (`trade_date`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_tech_date` (`trade_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_stock_news ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_stock_news` (
-  `news_id`           BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`          INT            NOT NULL,
+  `id`                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`          BIGINT UNSIGNED NOT NULL,
   `ticker`            VARCHAR(20)    NOT NULL,
   `headline`          VARCHAR(1000)  NOT NULL,
   `source`            VARCHAR(200)   NULL,
@@ -383,25 +381,24 @@ CREATE TABLE IF NOT EXISTS `fact_stock_news` (
   `llm_key_points`    JSON           NULL,
   `llm_catalysts`     TEXT           NULL,
   `llm_risks`         TEXT           NULL,
-  `sentiment_score`   DOUBLE         NULL,
+  `sentiment_score`   DOUBLE         NULL COMMENT '-1.0 to 1.0',
   `sentiment_label`   ENUM('very_negative','negative','neutral','positive','very_positive') NULL,
-  `relevance_score`   DOUBLE         NULL,
+  `relevance_score`   DOUBLE         NULL COMMENT '0 to 1',
   `llm_model`         VARCHAR(100)   NULL,
   `llm_processed_at`  DATETIME       NULL,
   `data_source`       VARCHAR(50)    NULL,
   `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `ix_news_stock_date` (`stock_id`, `published_at`),
-  INDEX `ix_news_published` (`published_at`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_news_published` (`published_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_earnings ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_earnings` (
-  `earnings_id`             BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`                INT            NOT NULL,
+  `id`                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`                BIGINT UNSIGNED NOT NULL,
   `ticker`                  VARCHAR(20)    NOT NULL,
   `fiscal_year`             SMALLINT       NOT NULL,
-  `fiscal_quarter`          SMALLINT       NOT NULL,
+  `fiscal_quarter`          TINYINT        NOT NULL,
   `report_date`             DATE           NULL,
   `period_ending`           DATE           NULL,
   `eps_actual`              DOUBLE         NULL,
@@ -438,86 +435,89 @@ CREATE TABLE IF NOT EXISTS `fact_earnings` (
   `data_source`             VARCHAR(50)    NULL,
   `created_at`              DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE INDEX `uq_earnings_period` (`stock_id`, `fiscal_quarter`, `fiscal_year`),
-  INDEX `ix_earnings_stock` (`stock_id`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_earnings_stock` (`stock_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_macro_indicator ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_macro_indicator` (
-  `macro_id`                BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id`                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `indicator_date`          DATE           NOT NULL,
-  `vix` DOUBLE NULL, `vix_term_structure` DOUBLE NULL,
-  `treasury_2y` DOUBLE NULL, `treasury_5y` DOUBLE NULL,
-  `treasury_10y` DOUBLE NULL, `treasury_30y` DOUBLE NULL,
-  `yield_curve_2_10` DOUBLE NULL, `yield_curve_3m_10y` DOUBLE NULL,
-  `fed_funds_rate` DOUBLE NULL, `breakeven_inflation_10y` DOUBLE NULL,
-  `sp500_advance_decline` DOUBLE NULL,
-  `sp500_new_highs` INT NULL, `sp500_new_lows` INT NULL,
-  `pct_above_sma200` DOUBLE NULL, `pct_above_sma50` DOUBLE NULL,
-  `spy_close` DOUBLE NULL, `qqq_close` DOUBLE NULL,
-  `iwm_close` DOUBLE NULL, `dia_close` DOUBLE NULL,
-  `sp500_return_1d` DOUBLE NULL,
-  `gold_close` DOUBLE NULL, `oil_wti` DOUBLE NULL,
-  `dollar_index` DOUBLE NULL,
-  `high_yield_spread` DOUBLE NULL, `investment_grade_spread` DOUBLE NULL,
-  `put_call_ratio` DOUBLE NULL, `aaii_bull_pct` DOUBLE NULL,
-  `fear_greed_index` DOUBLE NULL,
+  `vix`                     DOUBLE NULL, `vix_term_structure` DOUBLE NULL,
+  `treasury_2y`             DOUBLE NULL, `treasury_5y` DOUBLE NULL,
+  `treasury_10y`            DOUBLE NULL, `treasury_30y` DOUBLE NULL,
+  `yield_curve_2_10`        DOUBLE NULL, `yield_curve_3m_10y` DOUBLE NULL,
+  `fed_funds_rate`          DOUBLE NULL, `breakeven_inflation_10y` DOUBLE NULL,
+  `sp500_advance_decline`   DOUBLE NULL,
+  `sp500_new_highs`         INT    NULL, `sp500_new_lows` INT NULL,
+  `pct_above_sma200`        DOUBLE NULL, `pct_above_sma50` DOUBLE NULL,
+  `spy_close`               DOUBLE NULL, `qqq_close` DOUBLE NULL,
+  `iwm_close`               DOUBLE NULL, `dia_close` DOUBLE NULL,
+  `sp500_return_1d`         DOUBLE NULL,
+  `gold_close`              DOUBLE NULL, `oil_wti` DOUBLE NULL,
+  `dollar_index`            DOUBLE NULL,
+  `high_yield_spread`       DOUBLE NULL, `investment_grade_spread` DOUBLE NULL,
+  `put_call_ratio`          DOUBLE NULL, `aaii_bull_pct` DOUBLE NULL,
+  `fear_greed_index`        DOUBLE NULL,
   `data_source`             VARCHAR(100)   NULL,
   `created_at`              DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE INDEX `uq_macro_date` (`indicator_date`),
   INDEX `ix_macro_date` (`indicator_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- FINANCE — Internal Layer (computed signals, models, metadata)
+-- ═══════════════════════════════════════════════════════════════════════════════
+USE `finance_internal`;
+
 -- ─── fact_forecast ───────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_forecast` (
-  `forecast_id`         BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`            INT            NOT NULL,
+  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `stock_id`            BIGINT UNSIGNED NOT NULL COMMENT 'FK to finance_silver.dim_stock',
   `ticker`              VARCHAR(20)    NOT NULL,
   `forecast_date`       DATE           NOT NULL,
   `target_date`         DATE           NOT NULL,
-  `forecast_horizon`    INT            DEFAULT 1,
   `model_name`          VARCHAR(100)   NOT NULL,
   `model_version`       VARCHAR(50)    NULL,
-  `predicted_open` DOUBLE NULL, `predicted_high` DOUBLE NULL,
-  `predicted_low` DOUBLE NULL, `predicted_close` DOUBLE NULL,
-  `predicted_return` DOUBLE NULL,
-  `predicted_direction` INT            NULL,
-  `confidence_score`    DOUBLE         NULL,
+  `predicted_open`      DOUBLE NULL, `predicted_high` DOUBLE NULL,
+  `predicted_low`       DOUBLE NULL, `predicted_close` DOUBLE NULL,
+  `predicted_return`    DOUBLE NULL,
+  `predicted_direction` TINYINT        NULL COMMENT '1=up, -1=down, 0=flat',
+  `confidence_score`    DOUBLE         NULL COMMENT '0 to 1',
   `opportunity_score`   DOUBLE         NULL,
-  `lower_bound_95` DOUBLE NULL, `upper_bound_95` DOUBLE NULL,
-  `lower_bound_80` DOUBLE NULL, `upper_bound_80` DOUBLE NULL,
+  `lower_bound_95`      DOUBLE NULL, `upper_bound_95` DOUBLE NULL,
+  `lower_bound_80`      DOUBLE NULL, `upper_bound_80` DOUBLE NULL,
   `top_features`        JSON           NULL,
-  `actual_open` DOUBLE NULL, `actual_close` DOUBLE NULL,
-  `actual_return` DOUBLE NULL, `actual_direction` INT NULL,
+  `actual_open`         DOUBLE NULL, `actual_close` DOUBLE NULL,
+  `actual_return`       DOUBLE NULL, `actual_direction` TINYINT NULL,
   `was_correct`         TINYINT(1)     NULL,
   `llm_rationale`       TEXT           NULL,
   `llm_model`           VARCHAR(100)   NULL,
   `created_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `ix_forecast_stock_date` (`stock_id`, `forecast_date`),
-  INDEX `ix_forecast_target_date` (`target_date`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_forecast_target` (`target_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─── fact_backtest_result ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_backtest_result` (
-  `backtest_id`                 BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `id`                          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `run_date`                    DATE           NOT NULL,
   `model_name`                  VARCHAR(100)   NOT NULL,
   `model_version`               VARCHAR(50)    NULL,
   `tickers_tested`              JSON           NULL,
-  `train_start` DATE NULL, `train_end` DATE NULL,
-  `test_start` DATE NULL, `test_end` DATE NULL,
+  `train_start`                 DATE NULL, `train_end` DATE NULL,
+  `test_start`                  DATE NULL, `test_end` DATE NULL,
   `n_folds`                     INT            NULL,
-  `directional_accuracy` DOUBLE NULL, `precision_long` DOUBLE NULL,
-  `recall_long` DOUBLE NULL, `f1_long` DOUBLE NULL,
-  `strategy_return_total` DOUBLE NULL, `strategy_return_annualized` DOUBLE NULL,
-  `benchmark_return_total` DOUBLE NULL,
-  `alpha` DOUBLE NULL, `beta` DOUBLE NULL,
-  `sharpe_ratio` DOUBLE NULL, `sortino_ratio` DOUBLE NULL,
-  `max_drawdown` DOUBLE NULL, `calmar_ratio` DOUBLE NULL,
-  `win_rate` DOUBLE NULL, `avg_win` DOUBLE NULL,
-  `avg_loss` DOUBLE NULL, `profit_factor` DOUBLE NULL,
-  `rmse` DOUBLE NULL, `mae` DOUBLE NULL, `mape` DOUBLE NULL,
+  `directional_accuracy`        DOUBLE NULL, `precision_long` DOUBLE NULL,
+  `recall_long`                 DOUBLE NULL, `f1_long` DOUBLE NULL,
+  `strategy_return_total`       DOUBLE NULL, `strategy_return_annualized` DOUBLE NULL,
+  `benchmark_return_total`      DOUBLE NULL,
+  `alpha`                       DOUBLE NULL, `beta` DOUBLE NULL,
+  `sharpe_ratio`                DOUBLE NULL, `sortino_ratio` DOUBLE NULL,
+  `max_drawdown`                DOUBLE NULL, `calmar_ratio` DOUBLE NULL,
+  `win_rate`                    DOUBLE NULL, `avg_win` DOUBLE NULL,
+  `avg_loss`                    DOUBLE NULL, `profit_factor` DOUBLE NULL,
+  `rmse`                        DOUBLE NULL, `mae` DOUBLE NULL, `mape` DOUBLE NULL,
   `per_ticker_metrics`          JSON           NULL,
   `notes`                       TEXT           NULL,
   `created_at`                  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -526,52 +526,102 @@ CREATE TABLE IF NOT EXISTS `fact_backtest_result` (
 
 -- ─── fact_model_registry ─────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `fact_model_registry` (
-  `model_id`          BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`          INT            NULL,
-  `ticker`            VARCHAR(20)    NOT NULL,
-  `model_version`     VARCHAR(50)    DEFAULT 'v3.0',
-  `sequence_num`      INT            NOT NULL,
-  `status`            ENUM('candidate','champion','archived') NOT NULL DEFAULT 'candidate',
-  `trained_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `training_duration_sec` DOUBLE     NULL,
-  `train_rows`        INT            NULL,
-  `n_features`        INT            NULL,
-  `horizons`          JSON           NULL,
-  `hpo_method`        VARCHAR(20)    DEFAULT 'none',
-  `hyperparams`       JSON           NULL,
-  `train_metrics`     JSON           NULL,
-  `backtest_id`       BIGINT         NULL,
-  `backtest_metrics`  JSON           NULL,
-  `feature_importance` JSON          NULL,
-  `model_path`        VARCHAR(500)   NULL,
+  `id`                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `model_name`        VARCHAR(100)   NOT NULL,
+  `model_version`     VARCHAR(50)    NOT NULL,
+  `model_type`        VARCHAR(50)    NOT NULL COMMENT 'lightgbm, xgboost, ensemble',
+  `ticker`            VARCHAR(20)    NULL COMMENT 'NULL = global model',
+  `hyperparameters`   JSON           NULL,
+  `training_rows`     INT UNSIGNED   NULL,
+  `training_start`    DATE           NULL,
+  `training_end`      DATE           NULL,
+  `validation_metric` VARCHAR(50)    NULL,
+  `validation_score`  DOUBLE         NULL,
+  `artifact_path`     VARCHAR(500)   NULL COMMENT 'Path to serialized model file',
+  `is_active`         TINYINT(1)     NOT NULL DEFAULT 1,
   `promoted_at`       DATETIME       NULL,
-  `promoted_from_id`  BIGINT         NULL,
-  `notes`             TEXT           NULL,
+  `retired_at`        DATETIME       NULL,
   `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX `ix_model_registry_ticker` (`ticker`),
-  INDEX `ix_model_registry_status` (`status`),
-  INDEX `ix_model_registry_ticker_status` (`ticker`, `status`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`),
-  FOREIGN KEY (`backtest_id`) REFERENCES `fact_backtest_result` (`backtest_id`)
+  INDEX `ix_model_name` (`model_name`, `model_version`),
+  INDEX `ix_model_active` (`is_active`, `model_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ─── fact_stock_split ────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS `fact_stock_split` (
-  `split_id`          BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `stock_id`          INT            NOT NULL,
-  `ticker`            VARCHAR(20)    NOT NULL,
-  `split_date`        DATE           NOT NULL,
-  `split_ratio`       DOUBLE         NOT NULL,
-  `numerator`         INT            NULL,
-  `denominator`       INT            NULL,
-  `history_restated`  TINYINT(1)     DEFAULT 0,
-  `restated_at`       DATETIME       NULL,
-  `data_source`       VARCHAR(50)    NULL,
+-- ─── fact_feature_importance ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `fact_feature_importance` (
+  `id`                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `model_registry_id` BIGINT UNSIGNED NOT NULL COMMENT 'FK to fact_model_registry',
+  `feature_name`      VARCHAR(100)   NOT NULL,
+  `importance_score`  DOUBLE         NOT NULL,
+  `importance_rank`   INT UNSIGNED   NOT NULL,
+  `importance_type`   VARCHAR(50)    DEFAULT 'gain' COMMENT 'gain, split, shap',
   `created_at`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX `ix_split_stock_date` (`stock_id`, `split_date`),
-  FOREIGN KEY (`stock_id`) REFERENCES `dim_stock` (`stock_id`)
+  INDEX `ix_feat_model` (`model_registry_id`),
+  INDEX `ix_feat_rank` (`importance_rank`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- FINANCE — Gold Layer (final views/aggregates for consumption)
+-- ═══════════════════════════════════════════════════════════════════════════════
+USE `finance_gold`;
+
+-- ─── fact_portfolio_snapshot ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `fact_portfolio_snapshot` (
+  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `snapshot_date`       DATE           NOT NULL,
+  `ticker`              VARCHAR(20)    NOT NULL,
+  `stock_id`            BIGINT UNSIGNED NOT NULL,
+  `signal_direction`    TINYINT        NULL COMMENT '1=long, -1=short, 0=neutral',
+  `signal_strength`     DOUBLE         NULL COMMENT '0 to 1',
+  `predicted_return`    DOUBLE         NULL,
+  `confidence`          DOUBLE         NULL,
+  `risk_score`          DOUBLE         NULL COMMENT '0=low risk, 1=high risk',
+  `sector`              VARCHAR(100)   NULL,
+  `close_price`         DECIMAL(18,6)  NULL,
+  `market_cap`          DECIMAL(22,2)  NULL,
+  `created_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX `uq_portfolio_date_ticker` (`snapshot_date`, `ticker`),
+  INDEX `ix_portfolio_date` (`snapshot_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─── fact_signal_performance ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `fact_signal_performance` (
+  `id`                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `evaluation_date`     DATE           NOT NULL,
+  `ticker`              VARCHAR(20)    NOT NULL,
+  `signal_date`         DATE           NOT NULL,
+  `signal_direction`    TINYINT        NOT NULL,
+  `predicted_return`    DOUBLE         NULL,
+  `actual_return_1d`    DOUBLE         NULL,
+  `actual_return_5d`    DOUBLE         NULL,
+  `actual_return_20d`   DOUBLE         NULL,
+  `was_correct_1d`      TINYINT(1)     NULL,
+  `was_correct_5d`      TINYINT(1)     NULL,
+  `pnl_1d`              DOUBLE         NULL,
+  `pnl_5d`              DOUBLE         NULL,
+  `created_at`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `ix_sigperf_eval` (`evaluation_date`),
+  INDEX `ix_sigperf_ticker` (`ticker`, `signal_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─── vw_daily_signals (view) ─────────────────────────────────────────────────
+-- This view joins the latest forecast with silver-layer price + technicals
+-- for a single-query dashboard feed. References cross-database tables.
+CREATE OR REPLACE VIEW `vw_daily_signals` AS
+SELECT
+  f.`forecast_date`,
+  f.`ticker`,
+  f.`predicted_return`,
+  f.`predicted_direction`,
+  f.`confidence_score`,
+  f.`opportunity_score`,
+  f.`llm_rationale`,
+  f.`model_name`
+FROM `finance_internal`.`fact_forecast` f
+WHERE f.`forecast_date` = (
+  SELECT MAX(`forecast_date`) FROM `finance_internal`.`fact_forecast`
+)
+ORDER BY f.`opportunity_score` DESC;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════════
