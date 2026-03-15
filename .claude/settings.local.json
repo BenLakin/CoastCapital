@@ -75,7 +75,11 @@
       "Bash(git ls-files:*)",
       "Bash(xargs -r git rm --cached)",
       "Bash(find /Volumes/CoastTechnology/CoastCapital -name .smbdelete* -not -path */mysql_data/* -not -path */n8n_data/* -not -path */.git/*)",
-      "Bash(find /Volumes/CoastTechnology/CoastCapital -name ARCHITECTURE.md -o -name DATABASE* -o -name *schema*)"
+      "Bash(find /Volumes/CoastTechnology/CoastCapital -name ARCHITECTURE.md -o -name DATABASE* -o -name *schema*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\" \"http://ftp.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt\" --max-time 30)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\" \"https://www.sec.gov/files/company_tickers.json\" -H \"User-Agent: CoastCapital Finance Platform support@coastcapital.dev\" --max-time 30)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s\" \"https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=1\" -H \"User-Agent: Mozilla/5.0\" --max-time 15)",
+      "Bash(curl -s \"https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=3&offset=0\" -H \"User-Agent: Mozilla/5.0\" --max-time 15)"
     ]
   }
 }

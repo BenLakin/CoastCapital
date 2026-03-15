@@ -1,8 +1,12 @@
 """
-Universe loader: populates dim_stock from SEC EDGAR and NASDAQ Trader data.
+Universe loader: populates dim_stock from SEC EDGAR, NASDAQ Screener, and
+Twelve Data (international exchanges).
 
-Total HTTP requests: 3 (company_tickers.json, nasdaqlisted.txt, otherlisted.txt).
-Zero yfinance calls — no rate limiting concerns.
+Data sources (all free, no API key required):
+- SEC EDGAR: ~10K US companies with CIK numbers (1 HTTP request)
+- NASDAQ Screener: ~7K US stocks with market cap (2 HTTP requests)
+- Twelve Data: ~38K international stocks across 8 exchanges (8 HTTP requests)
+- Total: ~48K unique tickers, zero yfinance calls
 """
 import time
 import requests
@@ -16,14 +20,32 @@ from app.utils.logging_config import get_logger
 logger = get_logger(__name__)
 
 SEC_EDGAR_URL = "https://www.sec.gov/files/company_tickers.json"
-NASDAQ_LISTED_URL = "https://ftp.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt"
-NASDAQ_OTHER_URL = "https://ftp.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
+NASDAQ_SCREENER_URL = "https://api.nasdaq.com/api/screener/stocks"
+TWELVE_DATA_STOCKS_URL = "https://api.twelvedata.com/stocks"
 
 # SEC EDGAR requires a User-Agent header
 SEC_HEADERS = {
     "User-Agent": "CoastCapital Finance Platform support@coastcapital.dev",
     "Accept-Encoding": "gzip, deflate",
 }
+
+# NASDAQ Screener API requires a browser-like User-Agent
+NASDAQ_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Accept": "application/json",
+}
+
+# International exchange configs: (Twelve Data code, yfinance suffix, country)
+INTERNATIONAL_EXCHANGES = [
+    ("LSE", ".L", "United Kingdom"),
+    ("XFRA", ".DE", "Germany"),
+    ("JPX", ".T", "Japan"),
+    ("TSX", ".TO", "Canada"),
+    ("HKEX", ".HK", "Hong Kong"),
+    ("ASX", ".AX", "Australia"),
+    ("Euronext", ".PA", "France"),
+    ("SIX", ".SW", "Switzerland"),
+]
 
 
 def load_sec_edgar_tickers(db: Session) -> dict:
@@ -94,44 +116,74 @@ def load_sec_edgar_tickers(db: Session) -> dict:
         raise
 
 
-def load_nasdaq_trader_tickers(db: Session) -> dict:
+def load_nasdaq_screener_tickers(db: Session) -> dict:
     """
-    Download NASDAQ Trader symbol files and bulk insert into dim_stock.
-    nasdaqlisted.txt — NASDAQ-listed securities
-    otherlisted.txt  — NYSE, AMEX, ARCA, BATS, etc.
+    Download tickers from NASDAQ Screener API and bulk insert into dim_stock.
+    ~7K stocks across all US exchanges (NASDAQ, NYSE, AMEX, etc.).
+    Paginated: 5000 per request, typically 2 API calls.
     Idempotent: INSERT ... ON DUPLICATE KEY UPDATE.
     """
     start_time = time.time()
-    log_entry = FactBulkLoadLog(source="nasdaq_trader", status="running")
+    log_entry = FactBulkLoadLog(source="nasdaq_screener", status="running")
     db.add(log_entry)
     db.flush()
 
-    stats = {"nasdaq": 0, "other": 0, "skipped": 0}
+    stats = {"total": 0, "skipped": 0}
 
     try:
-        # --- NASDAQ-listed ---
-        logger.info("Downloading NASDAQ listed tickers")
-        resp = requests.get(NASDAQ_LISTED_URL, timeout=90)
-        resp.raise_for_status()
-        nasdaq_tickers = _parse_nasdaq_listed(resp.text)
-        stats["nasdaq"] = len(nasdaq_tickers)
+        all_tickers = []
+        offset = 0
+        page_size = 5000
 
-        # --- Other exchanges (NYSE, AMEX, ARCA, BATS) ---
-        logger.info("Downloading other exchange tickers")
-        resp = requests.get(NASDAQ_OTHER_URL, timeout=90)
-        resp.raise_for_status()
-        other_tickers = _parse_other_listed(resp.text)
-        stats["other"] = len(other_tickers)
+        while True:
+            logger.info("Downloading NASDAQ screener page", offset=offset)
+            resp = requests.get(
+                NASDAQ_SCREENER_URL,
+                params={"tableonly": "true", "limit": page_size, "offset": offset},
+                headers=NASDAQ_HEADERS,
+                timeout=90,
+            )
+            resp.raise_for_status()
+            data = resp.json()
 
-        # Combine and bulk upsert
-        all_tickers = nasdaq_tickers + other_tickers
-        logger.info("Parsed NASDAQ Trader tickers", total=len(all_tickers))
+            rows = data.get("data", {}).get("table", {}).get("rows", [])
+            total_records = data.get("data", {}).get("totalrecords", 0)
+
+            if not rows:
+                break
+
+            for row in rows:
+                ticker = (row.get("symbol") or "").strip().upper()
+                if not ticker or len(ticker) > 20:
+                    stats["skipped"] += 1
+                    continue
+                if any(c in ticker for c in ["/", "^", "=", "+", " "]):
+                    stats["skipped"] += 1
+                    continue
+
+                name = (row.get("name") or ticker)[:255]
+
+                all_tickers.append({
+                    "ticker": ticker,
+                    "company_name": name,
+                    "exchange": None,  # screener API doesn't provide exchange
+                    "is_etf": False,
+                })
+
+            offset += page_size
+            if offset >= total_records:
+                break
+            # Brief delay between pages
+            time.sleep(1)
+
+        stats["total"] = len(all_tickers)
+        logger.info("Parsed NASDAQ screener tickers", total=len(all_tickers))
 
         if all_tickers:
             batch_size = 500
             for i in range(0, len(all_tickers), batch_size):
                 batch = all_tickers[i:i + batch_size]
-                _bulk_upsert_stocks(batch, db, source="nasdaq_trader")
+                _bulk_upsert_stocks(batch, db, source="nasdaq_screener")
 
             db.flush()
 
@@ -142,7 +194,7 @@ def load_nasdaq_trader_tickers(db: Session) -> dict:
         log_entry.completed_at = datetime.utcnow()
         db.flush()
 
-        logger.info("NASDAQ Trader load complete", **stats)
+        logger.info("NASDAQ screener load complete", **stats)
         return stats
 
     except Exception as e:
@@ -151,73 +203,113 @@ def load_nasdaq_trader_tickers(db: Session) -> dict:
         log_entry.duration_sec = round(time.time() - start_time, 2)
         log_entry.completed_at = datetime.utcnow()
         db.flush()
-        logger.error("NASDAQ Trader load failed", error=str(e))
+        logger.error("NASDAQ screener load failed", error=str(e))
         raise
 
 
-def _parse_nasdaq_listed(raw_text: str) -> list[dict]:
-    """Parse nasdaqlisted.txt pipe-delimited format."""
-    tickers = []
-    lines = raw_text.strip().split("\n")
-    # Header: Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
-    for line in lines[1:]:  # skip header
-        if line.startswith("File Creation Time"):
-            continue
-        parts = line.split("|")
-        if len(parts) < 7:
-            continue
-        ticker = parts[0].strip().upper()
-        if not ticker or len(ticker) > 20:
-            continue
-        if any(c in ticker for c in ["/", "^", "=", "+", " "]):
-            continue
-        # Test issues: Y = test, N = real
-        if parts[3].strip().upper() == "Y":
-            continue
-        is_etf = parts[6].strip().upper() == "Y"
-        tickers.append({
-            "ticker": ticker,
-            "company_name": parts[1].strip()[:255] or ticker,
-            "exchange": "NASDAQ",
-            "is_etf": is_etf,
-        })
-    return tickers
+def load_international_tickers(db: Session) -> dict:
+    """
+    Download international tickers from Twelve Data free API and bulk insert.
+    ~38K stocks across 8 major exchanges (LSE, XFRA, JPX, TSX, HKEX, ASX, Euronext, SIX).
+    Tickers are suffixed for yfinance compatibility (e.g. AZN.L, 7203.T).
+    No API key required. One HTTP request per exchange.
+    """
+    start_time = time.time()
+    log_entry = FactBulkLoadLog(source="twelve_data_intl", status="running")
+    db.add(log_entry)
+    db.flush()
 
+    stats = {"exchanges": {}, "total": 0, "skipped": 0, "errors": []}
 
-def _parse_other_listed(raw_text: str) -> list[dict]:
-    """Parse otherlisted.txt pipe-delimited format."""
-    tickers = []
-    lines = raw_text.strip().split("\n")
-    # Header: ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|Test Issue|NASDAQ Symbol
-    for line in lines[1:]:
-        if line.startswith("File Creation Time"):
-            continue
-        parts = line.split("|")
-        if len(parts) < 7:
-            continue
-        ticker = parts[0].strip().upper()
-        if not ticker or len(ticker) > 20:
-            continue
-        if any(c in ticker for c in ["/", "^", "=", "+", " "]):
-            continue
-        # Test issues
-        if parts[6].strip().upper() == "Y":
-            continue
-        # Exchange mapping
-        exchange_code = parts[2].strip().upper()
-        exchange_map = {
-            "A": "AMEX", "N": "NYSE", "P": "ARCA",
-            "Z": "BATS", "V": "IEXG",
-        }
-        exchange = exchange_map.get(exchange_code, exchange_code)
-        is_etf = parts[4].strip().upper() == "Y"
-        tickers.append({
-            "ticker": ticker,
-            "company_name": parts[1].strip()[:255] or ticker,
-            "exchange": exchange,
-            "is_etf": is_etf,
+    try:
+        all_tickers = []
+
+        for exchange_code, yf_suffix, country in INTERNATIONAL_EXCHANGES:
+            try:
+                logger.info("Downloading international tickers",
+                            exchange=exchange_code, country=country)
+                resp = requests.get(
+                    TWELVE_DATA_STOCKS_URL,
+                    params={"exchange": exchange_code},
+                    timeout=90,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                stocks = data.get("data", [])
+
+                exchange_count = 0
+                for stock in stocks:
+                    symbol = (stock.get("symbol") or "").strip()
+                    if not symbol or len(symbol) > 15:
+                        stats["skipped"] += 1
+                        continue
+                    # Skip symbols with spaces or special chars
+                    if any(c in symbol for c in [" ", "=", "+"]):
+                        stats["skipped"] += 1
+                        continue
+
+                    # Build yfinance-compatible ticker
+                    yf_ticker = f"{symbol}{yf_suffix}"
+                    name = (stock.get("name") or yf_ticker)[:255]
+                    currency = (stock.get("currency") or "")[:10] or None
+
+                    all_tickers.append({
+                        "ticker": yf_ticker,
+                        "company_name": name,
+                        "exchange": exchange_code,
+                        "country": country,
+                        "currency": currency,
+                        "is_etf": stock.get("type", "").lower() in ("etf", "fund"),
+                    })
+                    exchange_count += 1
+
+                stats["exchanges"][exchange_code] = exchange_count
+                logger.info("Parsed exchange tickers",
+                            exchange=exchange_code, count=exchange_count)
+
+                # Brief delay between exchanges
+                time.sleep(0.5)
+
+            except Exception as e:
+                error_msg = f"{exchange_code}: {str(e)}"
+                logger.warning("Exchange load failed", exchange=exchange_code,
+                               error=str(e))
+                stats["errors"].append(error_msg)
+
+        stats["total"] = len(all_tickers)
+        logger.info("Parsed all international tickers", total=len(all_tickers))
+
+        if all_tickers:
+            batch_size = 500
+            for i in range(0, len(all_tickers), batch_size):
+                batch = all_tickers[i:i + batch_size]
+                _bulk_upsert_stocks(batch, db, source="twelve_data_intl")
+
+            db.flush()
+
+        log_entry.status = "success" if not stats["errors"] else "partial"
+        log_entry.tickers_loaded = stats["total"]
+        log_entry.rows_skipped = stats["skipped"]
+        log_entry.rows_errored = len(stats["errors"])
+        log_entry.duration_sec = round(time.time() - start_time, 2)
+        log_entry.completed_at = datetime.utcnow()
+        if stats["errors"]:
+            log_entry.error_message = "; ".join(stats["errors"][:10])
+        db.flush()
+
+        logger.info("International load complete", **{
+            k: v for k, v in stats.items() if k != "errors"
         })
-    return tickers
+        return stats
+
+    except Exception as e:
+        log_entry.status = "error"
+        log_entry.error_message = str(e)[:2000]
+        log_entry.duration_sec = round(time.time() - start_time, 2)
+        log_entry.completed_at = datetime.utcnow()
+        db.flush()
+        logger.error("International load failed", error=str(e))
+        raise
 
 
 def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
@@ -235,7 +327,7 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         values_parts.append(
             f"(:{prefix}_ticker, :{prefix}_name, :{prefix}_exchange, "
             f":{prefix}_is_etf, :{prefix}_cik, :{prefix}_is_active, "
-            f":{prefix}_stock_tier, NOW(), NOW())"
+            f":{prefix}_stock_tier, :{prefix}_country, :{prefix}_currency, NOW(), NOW())"
         )
         params[f"{prefix}_ticker"] = row["ticker"]
         params[f"{prefix}_name"] = row.get("company_name", row["ticker"])
@@ -244,10 +336,12 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
         params[f"{prefix}_cik"] = row.get("cik")
         params[f"{prefix}_is_active"] = 1
         params[f"{prefix}_stock_tier"] = row.get("stock_tier", "reference")
+        params[f"{prefix}_country"] = row.get("country", "USA")
+        params[f"{prefix}_currency"] = row.get("currency", "USD")
 
     sql = f"""
         INSERT INTO dim_stock (ticker, company_name, exchange, is_etf, cik, is_active,
-                               stock_tier, created_at, updated_at)
+                               stock_tier, country, currency, created_at, updated_at)
         VALUES {', '.join(values_parts)}
         ON DUPLICATE KEY UPDATE
             company_name = IF(
@@ -258,6 +352,8 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
             exchange = COALESCE(VALUES(exchange), exchange),
             is_etf = VALUES(is_etf),
             cik = COALESCE(VALUES(cik), cik),
+            country = COALESCE(VALUES(country), country),
+            currency = COALESCE(VALUES(currency), currency),
             updated_at = NOW()
     """
     db.execute(text(sql), params)
@@ -265,8 +361,8 @@ def _bulk_upsert_stocks(batch: list[dict], db: Session, source: str):
 
 def load_full_universe(db: Session) -> dict:
     """
-    Orchestrate full universe load: SEC EDGAR + NASDAQ Trader.
-    Marks existing watchlist tickers to preserve their tier.
+    Orchestrate full universe load: SEC EDGAR + NASDAQ Screener + International.
+    ~48K tickers total. Marks watchlist tickers to preserve their tier.
     Returns combined stats.
     """
     from app.config import settings
@@ -280,13 +376,19 @@ def load_full_universe(db: Session) -> dict:
     except Exception as e:
         results["sec_edgar_error"] = str(e)
 
-    # 2. Load NASDAQ Trader (~8K tickers, 2 HTTP requests)
+    # 2. Load NASDAQ Screener (~7K tickers, 2 HTTP requests)
     try:
-        results["nasdaq_trader"] = load_nasdaq_trader_tickers(db)
+        results["nasdaq_screener"] = load_nasdaq_screener_tickers(db)
     except Exception as e:
-        results["nasdaq_trader_error"] = str(e)
+        results["nasdaq_screener_error"] = str(e)
 
-    # 3. Ensure watchlist tickers are marked as 'watchlist' tier
+    # 3. Load international exchanges (~38K tickers, 8 HTTP requests)
+    try:
+        results["international"] = load_international_tickers(db)
+    except Exception as e:
+        results["international_error"] = str(e)
+
+    # 4. Ensure watchlist tickers are marked as 'watchlist' tier
     watchlist_tickers = settings.watchlist
     if watchlist_tickers:
         placeholders = ", ".join([f":wl{i}" for i in range(len(watchlist_tickers))])
@@ -298,7 +400,7 @@ def load_full_universe(db: Session) -> dict:
         db.flush()
         results["watchlist_marked"] = len(watchlist_tickers)
 
-    # 4. Get tier counts
+    # 5. Get tier counts
     tier_counts = {}
     for row in db.execute(text(
         "SELECT stock_tier, COUNT(*) as cnt FROM dim_stock WHERE is_active = 1 GROUP BY stock_tier"
