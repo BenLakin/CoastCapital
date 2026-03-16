@@ -65,7 +65,9 @@ def fetch_tournament_field(season: int) -> list[dict]:
                 n.get("headline", "") for n in event.get("notes", [])
             ).lower()
 
-            is_tournament = any(
+            # Detect tournament games via notes keywords OR season type 3 (post-season)
+            season_type = event.get("season", {}).get("type", 0)
+            is_tournament_by_notes = any(
                 kw in notes
                 for kw in [
                     "ncaa tournament", "ncaa men's basketball championship",
@@ -76,19 +78,21 @@ def fetch_tournament_field(season: int) -> list[dict]:
                     "national semifinal", "national championship",
                 ]
             )
+            is_tournament = is_tournament_by_notes or season_type == 3
             if not is_tournament:
                 continue
 
-            is_play_in = "first four" in notes
-            region = _extract_region(notes)
-            round_name = _extract_round_name(notes)
+            is_play_in = "first four" in notes or _is_play_in_by_date(date_str)
+            region = _extract_region(notes) or _extract_region_from_event(event)
+            round_name = _extract_round_name(notes) or _infer_round_from_date(date_str)
 
             for comp in event.get("competitions", [{}])[0].get("competitors", []):
                 team_obj = comp.get("team", {})
                 team_name = team_obj.get("displayName", "")
                 team_espn_id = str(team_obj.get("id", ""))
+                # Try multiple places ESPN stores seeds
                 seed = int(comp.get("curatedRank", {}).get("current", 0))
-                if seed == 0:
+                if seed == 0 or seed == 99:
                     seed = int(comp.get("tournamentSeed", 0) or 0)
                 if seed == 0:
                     seed = int(comp.get("seed", 0) or 0)
@@ -297,6 +301,65 @@ def _extract_region(notes: str) -> str:
     for region in ["east", "west", "south", "midwest"]:
         if region in notes:
             return region.capitalize()
+    return ""
+
+
+def _extract_region_from_event(event: dict) -> str:
+    """Try to extract region from event venue or other metadata."""
+    # ESPN sometimes puts region in the event name or venue
+    name = event.get("name", "").lower()
+    for region in ["east", "west", "south", "midwest"]:
+        if region in name:
+            return region.capitalize()
+    return ""
+
+
+def _is_play_in_by_date(date_str: str) -> bool:
+    """First Four games are typically March 14-15 (Tues/Wed before Round of 64)."""
+    try:
+        d = datetime.strptime(date_str, "%Y%m%d")
+        # First Four: first 2 days of the tournament window (typically Tue+Wed)
+        return d.month == 3 and d.day <= 18 and d.weekday() in (0, 1, 2)  # Mon/Tue/Wed
+    except ValueError:
+        return False
+
+
+def _infer_round_from_date(date_str: str) -> str:
+    """Infer tournament round from date when notes are empty.
+
+    Typical schedule:
+    - First Four: Tue-Wed of week 1 (Mar 14-18)
+    - Round of 64: Thu-Fri of week 1 (Mar 19-20)
+    - Round of 32: Sat-Sun of week 1 (Mar 21-22)
+    - Sweet 16: Thu-Fri of week 2 (Mar 26-27)
+    - Elite 8: Sat-Sun of week 2 (Mar 28-29)
+    - Final Four: Sat of week 3 (Apr 4-5)
+    - Championship: Mon of week 3 (Apr 7)
+    """
+    try:
+        d = datetime.strptime(date_str, "%Y%m%d")
+    except ValueError:
+        return ""
+
+    day = d.day
+    month = d.month
+
+    if month == 3:
+        if day <= 18:
+            return "First Four"
+        elif day <= 20:
+            return "Round of 64"
+        elif day <= 22:
+            return "Round of 32"
+        elif day <= 27:
+            return "Sweet 16"
+        elif day <= 29:
+            return "Elite 8"
+    elif month == 4:
+        if day <= 6:
+            return "Final Four"
+        else:
+            return "Championship"
     return ""
 
 

@@ -83,7 +83,8 @@
       "WebFetch(domain:www.aussportsbetting.com)",
       "WebFetch(domain:sports-statistics.com)",
       "Bash(grep -r \"ncaa_mbb_gold\\\\|ncaa_mbb_internal\\\\|CREATE SCHEMA\" /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports --include=*.py --include=*.sql)",
-      "WebFetch(domain:site.api.espn.com)"
+      "WebFetch(domain:site.api.espn.com)",
+      "Bash(curl -s \"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=20260316&groups=100&limit=100\")"
     ]
   }
 }
