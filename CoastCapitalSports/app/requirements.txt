@@ -7,3 +7,4 @@ mysql-connector-python
 torch
 scikit-learn
 prometheus_client==0.21.0
+openpyxl

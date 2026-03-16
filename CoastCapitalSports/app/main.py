@@ -623,6 +623,41 @@ def migrate_db():
 
 
 # ---------------------------------------------------------------------------
+# Historical odds backfill
+# ---------------------------------------------------------------------------
+
+@app.route("/backfill-odds", methods=["POST"])
+def backfill_odds():
+    """Backfill historical odds from external free datasets.
+
+    Body (JSON):
+      sport      — "nfl" or "mlb" (required)
+      start_year — int, optional filter
+      end_year   — int, optional filter
+
+    Downloads Excel files, matches to existing game_results rows by
+    (game_date, home_team, away_team), and inserts into fact_market_odds.
+    """
+    logger.info("POST /backfill-odds")
+    try:
+        data = request.get_json(force=True) or {}
+        sport = data.get("sport")
+        if not sport:
+            return _error("'sport' is required (nfl or mlb)")
+
+        from pipelines.odds_backfill import backfill_historical_odds
+        result = backfill_historical_odds(
+            sport=sport,
+            start_year=data.get("start_year"),
+            end_year=data.get("end_year"),
+        )
+        return jsonify(result)
+    except Exception as exc:
+        logger.error("Odds backfill failed: %s\n%s", exc, traceback.format_exc())
+        return _error(f"Odds backfill failed: {exc}")
+
+
+# ---------------------------------------------------------------------------
 # Daily pipeline
 # ---------------------------------------------------------------------------
 

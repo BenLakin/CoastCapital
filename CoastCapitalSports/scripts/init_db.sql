@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS fact_mbb_poll_ranking (
     team_name VARCHAR(100) NOT NULL,
     team_espn_id VARCHAR(20) NOT NULL,
     poll_type ENUM('ap','coaches') NOT NULL,
-    rank TINYINT,
+    `rank` TINYINT,
     previous_rank TINYINT,
     trend INT,
     poll_points FLOAT,
