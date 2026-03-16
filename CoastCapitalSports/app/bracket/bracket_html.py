@@ -91,8 +91,11 @@ def generate_bracket_html(
     champion = ""
     for p in picks_data:
         if p.get("round_number") == 6:
-            champion = p.get("predicted_winner", "")
+            winner = p.get("predicted_winner", "")
+            champion = winner if isinstance(winner, str) else str(winner)
             break
+
+    champion_prob = simulation_results.get("champion_rates", {}).get(champion, 0) * 100
 
     # Build region summaries
     region_names = bracket_structure.get("regions", [])
@@ -167,7 +170,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans
 
 <div class="champion-box">
   <div class="name">{champion}</div>
-  <div class="detail">Championship probability: {simulation_results.get('champion_rates', {{}}).get(champion, 0) * 100:.1f}%</div>
+  <div class="detail">Championship probability: {champion_prob:.1f}%</div>
 </div>
 
 <div class="top-champions">
