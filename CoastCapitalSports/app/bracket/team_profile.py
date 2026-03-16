@@ -233,7 +233,7 @@ def _get_latest_poll_rank(cursor, team_name: str) -> int:
     """Fetch the most recent AP poll rank (99 if unranked)."""
     cursor.execute(
         """
-        SELECT rank FROM fact_mbb_poll_ranking
+        SELECT `rank` FROM fact_mbb_poll_ranking
         WHERE team_name = %s AND poll_type = 'ap'
         ORDER BY snapshot_date DESC
         LIMIT 1
