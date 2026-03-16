@@ -82,7 +82,8 @@
       "Bash(curl -s \"https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=3&offset=0\" -H \"User-Agent: Mozilla/5.0\" --max-time 15)",
       "WebFetch(domain:www.aussportsbetting.com)",
       "WebFetch(domain:sports-statistics.com)",
-      "Bash(grep -r \"ncaa_mbb_gold\\\\|ncaa_mbb_internal\\\\|CREATE SCHEMA\" /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports --include=*.py --include=*.sql)"
+      "Bash(grep -r \"ncaa_mbb_gold\\\\|ncaa_mbb_internal\\\\|CREATE SCHEMA\" /Volumes/CoastTechnology/CoastCapital/CoastCapitalSports --include=*.py --include=*.sql)",
+      "WebFetch(domain:site.api.espn.com)"
     ]
   }
 }

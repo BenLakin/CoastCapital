@@ -244,11 +244,11 @@
             "conditions": [
               {
                 "id": "cond-promote-ok",
-                "leftValue": "={{ $json.status }}",
-                "rightValue": "ok",
+                "leftValue": "={{ $json.promoted }}",
+                "rightValue": "",
                 "operator": {
-                  "type": "string",
-                  "operation": "equals"
+                  "type": "boolean",
+                  "operation": "true"
                 }
               }
             ],

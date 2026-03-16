@@ -68,8 +68,10 @@ def fetch_tournament_field(season: int) -> list[dict]:
             is_tournament = any(
                 kw in notes
                 for kw in [
-                    "ncaa tournament", "march madness", "first four",
-                    "first round", "second round", "sweet 16", "elite 8",
+                    "ncaa tournament", "ncaa men's basketball championship",
+                    "march madness", "first four",
+                    "first round", "1st round", "second round", "2nd round",
+                    "sweet 16", "elite 8", "elite eight",
                     "final four", "championship", "round of 64", "round of 32",
                     "national semifinal", "national championship",
                 ]
@@ -309,8 +311,10 @@ def _extract_round_name(notes: str) -> str:
         ("elite eight", "Elite 8"),
         ("sweet 16", "Sweet 16"),
         ("sweet sixteen", "Sweet 16"),
+        ("2nd round", "Round of 32"),
         ("second round", "Round of 32"),
         ("round of 32", "Round of 32"),
+        ("1st round", "Round of 64"),
         ("first round", "Round of 64"),
         ("round of 64", "Round of 64"),
         ("first four", "First Four"),

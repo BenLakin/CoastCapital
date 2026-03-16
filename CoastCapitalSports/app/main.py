@@ -326,12 +326,19 @@ def promote_model_endpoint():
             target=target,
             cv_folds=_safe_int(payload.get("cv_folds"), 5),
         )
+        result["promoted"] = True
         return jsonify(result)
     except ValueError as exc:
         return _error(str(exc), status=400)
     except Exception as exc:
-        logger.error("Promote model failed: %s\n%s", exc, traceback.format_exc())
-        return _error(f"Promote model failed: {exc}")
+        logger.warning("Promote model did not pass validation (continuing with existing model): %s", exc)
+        return jsonify({
+            "success": True,
+            "warning": f"Promotion skipped — continuing with existing model: {exc}",
+            "promoted": False,
+            "sport": sport,
+            "target": target,
+        })
 
 
 @app.route("/refit-model", methods=["POST"])
