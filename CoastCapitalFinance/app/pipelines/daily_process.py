@@ -206,10 +206,13 @@ def run_daily_pipeline(
     return result
 
 
-def retrain_all_models(tickers: Optional[list[str]] = None) -> dict:
+def retrain_all_models(tickers: Optional[list[str]] = None, hpo_method: str = "grid") -> dict:
     """
     Retrain forecasting models for all tickers.
     Typically run weekly or when data drift is detected.
+
+    Args:
+        hpo_method: "none" (defaults), "grid" (fast ~30s/ticker), "bayesian" (Optuna ~3-5 min/ticker)
     """
     tickers = tickers or settings.watchlist
     results = {}
@@ -217,7 +220,7 @@ def retrain_all_models(tickers: Optional[list[str]] = None) -> dict:
     for ticker in tickers:
         try:
             with get_db() as db:
-                metrics = train_model(ticker, db)
+                metrics = train_model(ticker, db, hpo_method=hpo_method)
                 results[ticker] = {"status": "success", **metrics}
         except Exception as e:
             logger.error("Model training failed", ticker=ticker, error=str(e))

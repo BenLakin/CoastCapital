@@ -38,6 +38,9 @@ def train_model(
     learning_rate: float = 0.001,
     hidden_dim: int = 128,
     dropout: float = 0.1,
+    n_layers: int = 3,
+    batch_norm: bool = True,
+    weight_decay: float = 0.0,
 ) -> dict:
     """Train a binary classifier on the full dataset and save as a candidate.
 
@@ -71,8 +74,9 @@ def train_model(
 
     logger.info(
         "train_model: sport=%s target=%s version=%s  epochs=%d hidden_dim=%d "
-        "dropout=%.3f lr=%.6f bs=%d",
+        "dropout=%.3f lr=%.6f bs=%d n_layers=%d batch_norm=%s weight_decay=%.8f",
         sport, target, model_version, epochs, hidden_dim, dropout, learning_rate, batch_size,
+        n_layers, batch_norm, weight_decay,
     )
 
     materialize_features_to_modeling_silver(sport)
@@ -96,8 +100,11 @@ def train_model(
     train_dataset = TabularSportsDataset(df_train, FEATURE_COLUMNS, target_column)
     loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    model = SportsBinaryClassifier(input_dim=len(FEATURE_COLUMNS), hidden_dim=hidden_dim, dropout=dropout)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    model = SportsBinaryClassifier(
+        input_dim=len(FEATURE_COLUMNS), hidden_dim=hidden_dim, dropout=dropout,
+        n_layers=n_layers, batch_norm=batch_norm,
+    )
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.BCELoss()
 
     model.train()
@@ -170,6 +177,9 @@ def train_model(
         "learning_rate": learning_rate,
         "batch_size": batch_size,
         "epochs": epochs,
+        "n_layers": n_layers,
+        "batch_norm": batch_norm,
+        "weight_decay": weight_decay,
         "trained_at": datetime.now(tz=timezone.utc).isoformat(),
         "model_path": str(model_path),
         "metadata_path": str(metadata_path),
@@ -192,6 +202,9 @@ def train_model(
         "learning_rate": learning_rate,
         "hidden_dim": hidden_dim,
         "dropout": dropout,
+        "n_layers": n_layers,
+        "batch_norm": batch_norm,
+        "weight_decay": weight_decay,
         "train_rows": len(df_train),
         "total_rows": len(df),
         "feature_version": FEATURE_VERSION,

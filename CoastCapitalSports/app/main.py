@@ -205,6 +205,9 @@ def train_model_endpoint():
             learning_rate=_safe_float(payload.get("learning_rate"), 0.001),
             hidden_dim=_safe_int(payload.get("hidden_dim"), 128),
             dropout=_safe_float(payload.get("dropout"), 0.1),
+            n_layers=_safe_int(payload.get("n_layers"), 3),
+            batch_norm=bool(payload.get("batch_norm", True)),
+            weight_decay=_safe_float(payload.get("weight_decay"), 0.0),
         )
         return jsonify(result)
     except ValueError as exc:
@@ -280,13 +283,14 @@ def cross_validate_model_endpoint():
 
 @app.route("/tune-model", methods=["POST"])
 def tune_model_endpoint():
-    """Hyperparameter search over a defined search space.
+    """Optuna Bayesian hyperparameter optimization.
 
     Body (JSON, all optional):
-      sport        — "nfl" | "ncaa_mbb" | "mlb"  (default: "nfl")
-      target       — "home_win" | "cover_home" | "total_over"  (default: "home_win")
-      folds        — int  (default: 3)
-      search_space — dict of hyperparameter lists (see tune_torch_model.py)
+      sport     — "nfl" | "ncaa_mbb" | "mlb"  (default: "nfl")
+      target    — "home_win" | "cover_home" | "total_over"  (default: "home_win")
+      folds     — int  (default: 3)
+      n_trials  — int  (default: 50, from SPORTS_OPTUNA_N_TRIALS env)
+      timeout   — int seconds  (default: 600, from SPORTS_OPTUNA_TIMEOUT env)
     """
     payload = request.get_json(silent=True) or {}
     sport = payload.get("sport", "nfl")
@@ -297,7 +301,8 @@ def tune_model_endpoint():
             sport=sport,
             target=target,
             folds=_safe_int(payload.get("folds"), 3),
-            search_space=payload.get("search_space"),
+            n_trials=_safe_int(payload.get("n_trials"), None),
+            timeout=_safe_int(payload.get("timeout"), None),
         )
         return jsonify(result)
     except ValueError as exc:
@@ -404,12 +409,14 @@ def simulate_bracket_endpoint():
     """Run Monte Carlo bracket simulation and optimize picks.
 
     Body (JSON):
-      season         — int, tournament year (required)
-      n_simulations  — int  (default: 10000)
-      pool_size      — int  (default: 100)
-      risk_tolerance — float 0-1  (default: 0.5)
-      output_html    — bool  (default: true)
-      refresh_field  — bool, re-fetch field from ESPN  (default: false)
+      season             — int, tournament year (required)
+      n_runs             — int, number of independent runs  (default: 10)
+      n_simulations      — int, simulations per run  (default: 10000)
+      pool_size          — int  (default: 100)
+      risk_tolerance     — float 0-1  (default: 0.5)
+      output_html        — bool  (default: true)
+      output_pdf         — bool  (default: true)
+      refresh_field      — bool, re-fetch field from ESPN  (default: false)
     """
     payload = request.get_json(silent=True) or {}
     season = payload.get("season")
@@ -418,23 +425,28 @@ def simulate_bracket_endpoint():
     season = _safe_int(season, 0)
     if season < 2000:
         return _error("season must be a valid year (e.g. 2025)", status=400)
-    logger.info("POST /simulate-bracket  season=%d", season)
+
+    n_runs = _safe_int(payload.get("n_runs"), 10)
+    n_sims = _safe_int(payload.get("n_simulations"), 10000)
+    logger.info("POST /simulate-bracket  season=%d  n_runs=%d  n_sims=%d", season, n_runs, n_sims)
+
     try:
         from bracket.bracket_data import (
             build_bracket_structure, fetch_tournament_field,
             load_bracket_field, save_bracket_field,
         )
         from bracket.bracket_html import generate_bracket_html, save_bracket_html
+        from bracket.bracket_pdf import generate_summary_pdf
         from bracket.matchup_predictor import load_ncaa_model
         from bracket.optimizer import optimize_bracket
         from bracket.simulation import TournamentSimulator
         from bracket.team_profile import build_team_profiles, save_team_profiles
 
         refresh = payload.get("refresh_field", False)
-        n_sims = _safe_int(payload.get("n_simulations"), 10000)
         pool_size = _safe_int(payload.get("pool_size"), 100)
         risk_tolerance = _safe_float(payload.get("risk_tolerance"), 0.5)
         output_html = payload.get("output_html", True)
+        output_pdf = payload.get("output_pdf", True)
 
         # 1. Get bracket field
         field_df = load_bracket_field(season)
@@ -458,55 +470,87 @@ def simulate_bracket_endpoint():
         from models.modeling_data import build_feature_frame
         _, team_to_id = build_feature_frame("ncaa_mbb")
 
-        # 4. Simulate
-        simulator = TournamentSimulator(bracket, profiles, team_to_id, model)
-        sim_results = simulator.run_monte_carlo(n_sims)
+        # 4. Run N independent simulations
+        all_runs = []
+        best_run = None
+        best_expected = -1
 
-        # 5. Optimize
-        picks = optimize_bracket(sim_results, bracket, pool_size, risk_tolerance)
+        for run_idx in range(n_runs):
+            logger.info("simulate-bracket: run %d/%d (%d sims)", run_idx + 1, n_runs, n_sims)
+            simulator = TournamentSimulator(bracket, profiles, team_to_id, model)
+            sim_results = simulator.run_monte_carlo(n_sims)
 
-        # 6. HTML
-        html_file = None
-        if output_html:
-            html_file = f"/app/bracket_output/{season}_bracket.html"
-            html = generate_bracket_html(
-                picks, sim_results, bracket, season,
-                metadata.get("model_version", "unknown"),
-                pool_size,
-            )
-            save_bracket_html(html, html_file)
+            picks = optimize_bracket(sim_results, bracket, pool_size, risk_tolerance)
 
-        # Serialize picks
-        picks_data = [
-            {
-                "round": p.round_number,
-                "game": p.game_number,
-                "region": p.region,
-                "winner": p.predicted_winner,
-                "win_prob": p.win_probability,
-                "is_upset": p.is_upset,
-                "is_contrarian": p.is_contrarian,
+            picks_data = [
+                {
+                    "round": p.round_number,
+                    "game": p.game_number,
+                    "region": p.region,
+                    "winner": p.predicted_winner,
+                    "win_prob": p.win_probability,
+                    "is_upset": p.is_upset,
+                    "is_contrarian": p.is_contrarian,
+                    "expected_points": getattr(p, "expected_points", 0),
+                }
+                for p in picks
+            ]
+
+            champion = ""
+            for p in picks_data:
+                if p["round"] == 6:
+                    champion = p["winner"]
+                    break
+
+            total_expected = sum(p.get("expected_points", 0) for p in picks_data)
+
+            run_result = {
+                "run": run_idx + 1,
+                "simulation_id": sim_results["simulation_id"],
+                "n_simulations": n_sims,
+                "champion": champion,
+                "picks": picks_data,
+                "total_expected_points": total_expected,
+                "top_champions": dict(
+                    sorted(sim_results["champion_rates"].items(), key=lambda x: -x[1])[:10]
+                ),
             }
-            for p in picks
-        ]
+            all_runs.append(run_result)
 
-        champion = ""
-        for p in picks_data:
-            if p["round"] == 6:
-                champion = p["winner"]
-                break
+            if total_expected > best_expected:
+                best_expected = total_expected
+                best_run = run_result
+
+            # Save HTML for each run
+            if output_html:
+                html_file = f"/app/bracket_output/{season}_bracket_run{run_idx + 1}.html"
+                html = generate_bracket_html(
+                    picks, sim_results, bracket, season,
+                    metadata.get("model_version", "unknown"),
+                    pool_size,
+                )
+                save_bracket_html(html, html_file)
+
+        # 5. Generate summary PDF across all runs
+        pdf_path = None
+        if output_pdf:
+            try:
+                pdf_path = generate_summary_pdf(
+                    all_runs, season,
+                    metadata.get("model_version", "unknown"),
+                )
+            except Exception as pdf_exc:
+                logger.warning("PDF generation failed (non-fatal): %s", pdf_exc)
 
         return jsonify({
             "status": "ok",
             "season": season,
-            "simulation_id": sim_results["simulation_id"],
-            "n_simulations": n_sims,
-            "champion": champion,
-            "picks": picks_data,
-            "top_champions": dict(
-                sorted(sim_results["champion_rates"].items(), key=lambda x: -x[1])[:10]
-            ),
-            "html_path": html_file,
+            "n_runs": n_runs,
+            "n_simulations_per_run": n_sims,
+            "best_run": best_run,
+            "champion": best_run["champion"] if best_run else "",
+            "all_champions": [r["champion"] for r in all_runs],
+            "pdf_path": pdf_path,
             "model_version": metadata.get("model_version"),
         })
     except ValueError as exc:

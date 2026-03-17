@@ -99,6 +99,9 @@ def cross_validate_model(
     folds: int = 5,
     hidden_dim: int = 128,
     dropout: float = 0.1,
+    n_layers: int = 3,
+    batch_norm: bool = True,
+    weight_decay: float = 0.0,
     *,
     skip_materialize: bool = False,
     preloaded_df=None,
@@ -127,8 +130,9 @@ def cross_validate_model(
     """
     logger.info(
         "cross_validate_model: sport=%s target=%s folds=%d epochs=%d "
-        "hidden_dim=%d dropout=%.3f lr=%.6f bs=%d",
+        "hidden_dim=%d dropout=%.3f lr=%.6f bs=%d n_layers=%d batch_norm=%s wd=%.8f",
         sport, target, folds, epochs, hidden_dim, dropout, learning_rate, batch_size,
+        n_layers, batch_norm, weight_decay,
     )
 
     if not skip_materialize:
@@ -154,8 +158,11 @@ def cross_validate_model(
         train_loader = DataLoader(Subset(dataset, train_idx.tolist()), batch_size=batch_size, shuffle=True)
         valid_loader = DataLoader(Subset(dataset, valid_idx.tolist()), batch_size=batch_size, shuffle=False)
 
-        model = SportsBinaryClassifier(input_dim=len(FEATURE_COLUMNS), hidden_dim=hidden_dim, dropout=dropout)
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        model = SportsBinaryClassifier(
+            input_dim=len(FEATURE_COLUMNS), hidden_dim=hidden_dim, dropout=dropout,
+            n_layers=n_layers, batch_norm=batch_norm,
+        )
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
         model.train()
         for _ in range(epochs):
@@ -207,5 +214,8 @@ def cross_validate_model(
             "learning_rate": learning_rate,
             "hidden_dim": hidden_dim,
             "dropout": dropout,
+            "n_layers": n_layers,
+            "batch_norm": batch_norm,
+            "weight_decay": weight_decay,
         },
     }

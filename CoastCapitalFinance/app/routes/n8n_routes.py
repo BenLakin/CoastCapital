@@ -247,11 +247,13 @@ def train_ticker(ticker: str):
     from app.models.database import get_db
 
     ticker = ticker.upper()
-    logger.info("n8n train triggered", ticker=ticker)
+    body = request.get_json(silent=True) or {}
+    hpo_method = body.get("hpo_method", "grid")
+    logger.info("n8n train triggered", ticker=ticker, hpo_method=hpo_method)
 
     try:
         with get_db() as db:
-            result = train_model(ticker, db)
+            result = train_model(ticker, db, hpo_method=hpo_method)
         return success_response(result)
     except Exception as e:
         logger.error("Training error", ticker=ticker, error=str(e))
@@ -266,11 +268,14 @@ def retrain_all():
 
     body = request.get_json(silent=True) or {}
     tickers = body.get("tickers", _dynamic_watchlist)
+    hpo_method = body.get("hpo_method", "grid")
+    if hpo_method not in ("none", "grid", "bayesian"):
+        return error_response(f"Invalid hpo_method: {hpo_method}")
 
-    logger.info("n8n retrain-all triggered", n_tickers=len(tickers))
+    logger.info("n8n retrain-all triggered", n_tickers=len(tickers), hpo_method=hpo_method)
 
     try:
-        result = retrain_all_models(tickers=[t.upper() for t in tickers])
+        result = retrain_all_models(tickers=[t.upper() for t in tickers], hpo_method=hpo_method)
         return success_response(result)
     except Exception as e:
         logger.error("Retrain-all error", error=str(e))

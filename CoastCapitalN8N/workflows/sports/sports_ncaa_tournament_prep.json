@@ -1,9 +1,9 @@
 [
   {
     "id": "a1b2c3d4-5001-4000-800a-000000000024",
-    "name": "Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)",
+    "name": "Sports - NCAA Tournament Prep (Backfill \u2192 Tune \u2192 Train \u2192 Simulate)",
     "active": true,
-    "versionId": "1",
+    "versionId": "2",
     "meta": {
       "instanceId": "coastcapital-n8n"
     },
@@ -35,17 +35,14 @@
       "saveManualExecutions": true,
       "callerPolicy": "workflowsFromSameOwner"
     },
-    "notes": "Full NCAA Men's Basketball tournament preparation pipeline. Runs the complete sequence: backfill season data, materialize features, train model, promote model, and simulate bracket. Triggered via webhook at /webhook/sports-ncaa-prep. Each step checks for success before proceeding; failures notify #coast-action-needed and call the platform error handler.",
+    "notes": "Full NCAA MBB tournament prep pipeline: backfill season data, materialize features, Optuna Bayesian HPO (50 trials), train with best params, promote (with holdout+CV accuracy validation), simulate bracket (10 independent runs x 10K sims each), generate PDF summary, notify Slack with PDF. Triggered via webhook or manual trigger.",
     "nodes": [
       {
         "id": "node-webhook-trigger",
         "name": "Webhook Trigger",
         "type": "n8n-nodes-base.webhook",
         "typeVersion": 1.1,
-        "position": [
-          250,
-          300
-        ],
+        "position": [250, 300],
         "webhookId": "sports-ncaa-prep-webhook",
         "parameters": {
           "path": "/webhook/sports-ncaa-prep",
@@ -59,12 +56,9 @@
         "name": "Job Started",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          470,
-          300
-        ],
+        "position": [470, 300],
         "parameters": {
-          "text": "=[Sports] NCAA Tournament Prep started ({{ $now.format('yyyy-MM-dd') }})",
+          "text": "=[Sports] NCAA Tournament Prep started ({{ $now.format('yyyy-MM-dd') }})\nPipeline: Backfill \u2192 Features \u2192 Optuna HPO (50 trials) \u2192 Train \u2192 Promote \u2192 Simulate (10 runs x 10K sims)",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -85,10 +79,7 @@
         "name": "Step 1 - POST /backfill",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          690,
-          300
-        ],
+        "position": [690, 300],
         "parameters": {
           "method": "POST",
           "url": "http://host.docker.internal:5300/backfill",
@@ -96,7 +87,7 @@
           "genericAuthType": "httpHeaderAuth",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"sport\": \"ncaa_mbb\", \"start_date\": \"2024-11-01\", \"end_date\": \"{{ $now.format('yyyy-MM-dd') }}\"}",
+          "jsonBody": "={\"sport\": \"ncaa_mbb\", \"start_date\": \"2024-11-01\", \"end_date\": \"{{ $now.plus(25, 'days').format('yyyy-MM-dd') }}\"}",
           "options": {
             "timeout": 600000
           }
@@ -113,10 +104,7 @@
         "name": "Backfill OK?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2,
-        "position": [
-          910,
-          300
-        ],
+        "position": [910, 300],
         "parameters": {
           "conditions": {
             "options": {
@@ -144,10 +132,7 @@
         "name": "Step 2 - POST /materialize-features",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1130,
-          200
-        ],
+        "position": [1130, 200],
         "onError": "continueErrorOutput",
         "parameters": {
           "method": "POST",
@@ -169,14 +154,37 @@
         }
       },
       {
-        "id": "node-train",
-        "name": "Step 3 - POST /train-model",
+        "id": "node-tune",
+        "name": "Step 3 - POST /tune-model",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1350,
-          200
-        ],
+        "position": [1350, 200],
+        "onError": "continueErrorOutput",
+        "parameters": {
+          "method": "POST",
+          "url": "http://host.docker.internal:5300/tune-model",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"sport\": \"ncaa_mbb\", \"target\": \"home_win\", \"folds\": 3, \"n_trials\": 50, \"timeout\": 600}",
+          "options": {
+            "timeout": 3600000
+          }
+        },
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "7NUHQU5ld1czCF4S",
+            "name": "Sports Webhook Auth"
+          }
+        }
+      },
+      {
+        "id": "node-train",
+        "name": "Step 4 - POST /train-model (best params)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [1570, 200],
         "onError": "continueErrorOutput",
         "parameters": {
           "method": "POST",
@@ -185,7 +193,7 @@
           "genericAuthType": "httpHeaderAuth",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"sport\": \"ncaa_mbb\", \"target\": \"home_win\", \"epochs\": 10, \"hidden_dim\": 128}",
+          "jsonBody": "={\"sport\": \"ncaa_mbb\", \"target\": \"home_win\", \"epochs\": {{ $json.best_result.params.epochs || 10 }}, \"hidden_dim\": {{ $json.best_result.params.hidden_dim || 128 }}, \"batch_size\": {{ $json.best_result.params.batch_size || 32 }}, \"learning_rate\": {{ $json.best_result.params.learning_rate || 0.001 }}, \"dropout\": {{ $json.best_result.params.dropout || 0.1 }}, \"n_layers\": {{ $json.best_result.params.n_layers || 3 }}, \"batch_norm\": {{ $json.best_result.params.batch_norm ?? true }}, \"weight_decay\": {{ $json.best_result.params.weight_decay || 0.0 }}}",
           "options": {
             "timeout": 600000
           }
@@ -199,13 +207,10 @@
       },
       {
         "id": "node-promote",
-        "name": "Step 4 - POST /promote-model",
+        "name": "Step 5 - POST /promote-model",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1570,
-          200
-        ],
+        "position": [1790, 200],
         "parameters": {
           "method": "POST",
           "url": "http://host.docker.internal:5300/promote-model",
@@ -215,7 +220,7 @@
           "specifyBody": "json",
           "jsonBody": "={\"sport\": \"ncaa_mbb\", \"target\": \"home_win\", \"cv_folds\": 5}",
           "options": {
-            "timeout": 300000
+            "timeout": 600000
           }
         },
         "credentials": {
@@ -230,10 +235,7 @@
         "name": "Promotion OK?",
         "type": "n8n-nodes-base.if",
         "typeVersion": 2,
-        "position": [
-          1790,
-          200
-        ],
+        "position": [2010, 200],
         "parameters": {
           "conditions": {
             "options": {
@@ -261,12 +263,9 @@
         "name": "Slack - Promotion Warning",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          2010,
-          350
-        ],
+        "position": [2230, 350],
         "parameters": {
-          "text": "=[Sports] :warning: NCAA model promotion did not pass validation (continuing with existing model): {{ $json.error || $json.message || 'Check logs' }}",
+          "text": "=[Sports] :warning: NCAA model promotion did not pass validation (continuing with existing model): {{ $json.warning || $json.error || 'Check logs' }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -284,13 +283,10 @@
       },
       {
         "id": "node-simulate",
-        "name": "Step 5 - POST /simulate-bracket",
+        "name": "Step 6 - POST /simulate-bracket",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          2230,
-          200
-        ],
+        "position": [2450, 200],
         "onError": "continueErrorOutput",
         "parameters": {
           "method": "POST",
@@ -299,9 +295,9 @@
           "genericAuthType": "httpHeaderAuth",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"season\": {{ $now.year }}, \"n_simulations\": 10000, \"pool_size\": 100, \"risk_tolerance\": 0.5, \"output_html\": true, \"refresh_field\": true}",
+          "jsonBody": "={\"season\": {{ $now.year }}, \"n_runs\": 10, \"n_simulations\": 10000, \"pool_size\": 100, \"risk_tolerance\": 0.5, \"output_html\": true, \"output_pdf\": true, \"refresh_field\": true}",
           "options": {
-            "timeout": 600000
+            "timeout": 3600000
           }
         },
         "credentials": {
@@ -316,16 +312,13 @@
         "name": "Slack - Tournament Prep Complete",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          2450,
-          200
-        ],
+        "position": [2670, 200],
         "parameters": {
-          "text": "=[Sports] NCAA Tournament Prep Complete ({{ $now.format('yyyy-MM-dd') }})\nPipeline: Backfill -> Features -> Train -> Promote -> Simulate\nSimulations: {{ $json.n_simulations || 10000 }}\nPredicted Champion: {{ $json.champion || 'check dashboard' }}\nTop Contenders: {{ $json.top_contenders || 'see bracket page' }}\nModel Accuracy: {{ $json.accuracy || 'N/A' }}\nBracket HTML: {{ $json.html_url || 'generated' }}",
+          "text": "=[Sports] :trophy: NCAA Tournament Prep Complete ({{ $now.format('yyyy-MM-dd') }})\n*Pipeline:* Backfill \u2192 Features \u2192 Tune \u2192 Train \u2192 Promote \u2192 Simulate\n*Runs:* {{ $json.n_runs || 10 }} x {{ $json.n_simulations_per_run || 10000 }} simulations\n*Best Champion:* {{ $json.champion || 'check dashboard' }}\n*All Champions:* {{ ($json.all_champions || []).join(', ') }}\n*Model:* {{ $json.model_version || 'N/A' }}\n*PDF Report:* {{ $json.pdf_path || 'not generated' }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
-            "value": "C0ALK9LU6H4",
+            "value": "C0ALQUT54PN",
             "mode": "id"
           },
           "select": "channel"
@@ -342,12 +335,9 @@
         "name": "Slack - Backfill Failed",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          1130,
-          450
-        ],
+        "position": [1130, 450],
         "parameters": {
-          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -368,16 +358,13 @@
         "name": "Error Handler - Backfill",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1350,
-          450
-        ],
+        "position": [1350, 450],
         "parameters": {
           "method": "POST",
           "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
           "options": {
             "timeout": 10000
           }
@@ -388,12 +375,9 @@
         "name": "Slack - Materialize Failed",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          1350,
-          450
-        ],
+        "position": [1350, 550],
         "parameters": {
-          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -414,16 +398,53 @@
         "name": "Error Handler - Materialize",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1570,
-          450
-        ],
+        "position": [1570, 550],
         "parameters": {
           "method": "POST",
           "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "options": {
+            "timeout": 10000
+          }
+        }
+      },
+      {
+        "id": "node-slack-tune-failed",
+        "name": "Slack - Tune Failed",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.3,
+        "position": [1570, 650],
+        "parameters": {
+          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+          "otherOptions": {},
+          "channelId": {
+            "__rl": true,
+            "value": "C0ALHU9MADB",
+            "mode": "id"
+          },
+          "select": "channel"
+        },
+        "credentials": {
+          "slackApi": {
+            "id": "SOJFNoa56040Xc8Q",
+            "name": "Slack account"
+          }
+        }
+      },
+      {
+        "id": "node-error-handler-tune",
+        "name": "Error Handler - Tune",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [1790, 650],
+        "parameters": {
+          "method": "POST",
+          "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
           "options": {
             "timeout": 10000
           }
@@ -434,12 +455,9 @@
         "name": "Slack - Train Failed",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          1570,
-          550
-        ],
+        "position": [1790, 550],
         "parameters": {
-          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -460,16 +478,13 @@
         "name": "Error Handler - Train",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          1790,
-          550
-        ],
+        "position": [2010, 550],
         "parameters": {
           "method": "POST",
           "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
           "options": {
             "timeout": 10000
           }
@@ -480,12 +495,9 @@
         "name": "Slack - Simulate Failed",
         "type": "n8n-nodes-base.slack",
         "typeVersion": 2.3,
-        "position": [
-          2450,
-          450
-        ],
+        "position": [2670, 450],
         "parameters": {
-          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*HTTP Status:* {{ $json.statusCode || 'N/A' }}\n*Response:* {{ JSON.stringify($json.body || $json.data || {}).substring(0, 500) }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n*Execution:* {{ $execution.resumeUrl ? $execution.resumeUrl : 'N/A' }}",
+          "text": "=[Sports] :x: *Sports - NCAA Tournament Prep* failed\n*Error:* {{ $json.error || $json.message || 'Unknown error' }}\n*Node:* {{ $prevNode.name }}\n*Timestamp:* {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
           "otherOptions": {},
           "channelId": {
             "__rl": true,
@@ -506,16 +518,13 @@
         "name": "Error Handler - Simulate",
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.1,
-        "position": [
-          2670,
-          450
-        ],
+        "position": [2890, 450],
         "parameters": {
           "method": "POST",
           "url": "http://coastcapital-n8n:5678/webhook/platform-error-handler",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep (Backfill \u2192 Train \u2192 Simulate)\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"status_code\": \"{{ $json.statusCode || 'N/A' }}\", \"response_body\": \"{{ JSON.stringify($json.body || $json.data || {}).substring(0, 1000) }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
+          "jsonBody": "={\"workflow_name\": \"Sports - NCAA Tournament Prep\", \"module\": \"sports\", \"error_message\": \"{{ $json.error || $json.message || 'Unknown error' }}\", \"failed_node\": \"{{ $prevNode.name }}\", \"timestamp\": \"{{ $now.toISO() }}\", \"execution_id\": \"{{ $execution.id }}\"}",
           "options": {
             "timeout": 10000
           }
@@ -527,10 +536,7 @@
         "name": "Manual Trigger",
         "type": "n8n-nodes-base.manualTrigger",
         "typeVersion": 1,
-        "position": [
-          250,
-          100
-        ]
+        "position": [250, 100]
       }
     ],
     "connections": {
@@ -589,7 +595,7 @@
         "main": [
           [
             {
-              "node": "Step 3 - POST /train-model",
+              "node": "Step 3 - POST /tune-model",
               "type": "main",
               "index": 0
             }
@@ -603,11 +609,29 @@
           ]
         ]
       },
-      "Step 3 - POST /train-model": {
+      "Step 3 - POST /tune-model": {
         "main": [
           [
             {
-              "node": "Step 4 - POST /promote-model",
+              "node": "Step 4 - POST /train-model (best params)",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Slack - Tune Failed",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Step 4 - POST /train-model (best params)": {
+        "main": [
+          [
+            {
+              "node": "Step 5 - POST /promote-model",
               "type": "main",
               "index": 0
             }
@@ -621,7 +645,7 @@
           ]
         ]
       },
-      "Step 4 - POST /promote-model": {
+      "Step 5 - POST /promote-model": {
         "main": [
           [
             {
@@ -636,7 +660,7 @@
         "main": [
           [
             {
-              "node": "Step 5 - POST /simulate-bracket",
+              "node": "Step 6 - POST /simulate-bracket",
               "type": "main",
               "index": 0
             }
@@ -654,14 +678,14 @@
         "main": [
           [
             {
-              "node": "Step 5 - POST /simulate-bracket",
+              "node": "Step 6 - POST /simulate-bracket",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Step 5 - POST /simulate-bracket": {
+      "Step 6 - POST /simulate-bracket": {
         "main": [
           [
             {
@@ -695,6 +719,17 @@
           [
             {
               "node": "Error Handler - Materialize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Slack - Tune Failed": {
+        "main": [
+          [
+            {
+              "node": "Error Handler - Tune",
               "type": "main",
               "index": 0
             }

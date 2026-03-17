@@ -101,8 +101,11 @@
         "url": "http://host.docker.internal:5050/n8n/retrain-all",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"hpo_method\": \"grid\"}",
         "options": {
-          "timeout": 600000
+          "timeout": 1200000
         }
       },
       "credentials": {

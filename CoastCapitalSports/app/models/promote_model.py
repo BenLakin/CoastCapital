@@ -73,6 +73,7 @@ def _log_to_registry(
         INSERT INTO fact_model_registry (
             sport, target, model_version, status,
             hidden_dim, dropout, learning_rate, batch_size, epochs,
+            n_layers, batch_norm, weight_decay,
             cv_folds, cv_avg_loss, cv_avg_accuracy, cv_avg_auc,
             cv_fold_losses, cv_fold_accuracies, cv_fold_aucs,
             train_rows, train_final_loss, feature_version, feature_count,
@@ -80,6 +81,7 @@ def _log_to_registry(
         ) VALUES (
             %s, %s, %s, %s,
             %s, %s, %s, %s, %s,
+            %s, %s, %s,
             %s, %s, %s, %s,
             %s, %s, %s,
             %s, %s, %s, %s,
@@ -90,6 +92,7 @@ def _log_to_registry(
             sport, target, model_version, status,
             params.get("hidden_dim"), params.get("dropout"),
             params.get("learning_rate"), params.get("batch_size"), params.get("epochs"),
+            params.get("n_layers"), params.get("batch_norm"), params.get("weight_decay"),
             cv_folds, cv_avg_loss, cv_avg_accuracy, cv_avg_auc,
             cv_fold_losses, cv_fold_accuracies, cv_fold_aucs,
             train_rows, train_final_loss, FEATURE_VERSION,
@@ -147,6 +150,10 @@ def _copy_candidate_to_production(sport: str, target: str):
 # Public API
 # ---------------------------------------------------------------------------
 
+MIN_HOLDOUT_ACCURACY = 0.52   # must beat coin-flip baseline
+MIN_CV_ACCURACY = 0.52
+
+
 def promote_model(
     sport: str,
     target: str = "home_win",
@@ -156,10 +163,12 @@ def promote_model(
 
     Steps:
       1. Read candidate metadata for hyperparameters.
-      2. Run time-series cross-validation to compute CV metrics.
-      3. Log the candidate to ``fact_model_registry`` as **production**.
-      4. Retire the previous production model.
-      5. Copy candidate files to production filenames.
+      2. Check holdout accuracy from training (must beat baseline).
+      3. Run time-series cross-validation to compute CV metrics.
+      4. Check CV accuracy threshold.
+      5. Log the candidate to ``fact_model_registry`` as **production**.
+      6. Retire the previous production model.
+      7. Copy candidate files to production filenames.
 
     Parameters
     ----------
@@ -177,7 +186,7 @@ def promote_model(
     Raises
     ------
     ValueError
-        If the candidate metadata is missing.
+        If the candidate metadata is missing or model fails validation.
     """
     metadata_path = MODEL_DIR / f"{sport}_{target}_candidate_metadata.json"
     if not metadata_path.exists():
@@ -196,12 +205,23 @@ def promote_model(
         "learning_rate": float(metadata.get("learning_rate", 0.001)),
         "batch_size": int(metadata.get("batch_size", 32)),
         "epochs": int(metadata.get("epochs", 5)),
+        "n_layers": int(metadata.get("n_layers", 3)),
+        "batch_norm": bool(metadata.get("batch_norm", True)),
+        "weight_decay": float(metadata.get("weight_decay", 0.0)),
     }
 
     logger.info(
         "promote_model: validating candidate version=%s  sport=%s target=%s  cv_folds=%d",
         model_version, sport, target, cv_folds,
     )
+
+    # --- Check holdout accuracy from training ---
+    holdout_accuracy = metadata.get("holdout_accuracy")
+    if holdout_accuracy is not None and holdout_accuracy < MIN_HOLDOUT_ACCURACY:
+        raise ValueError(
+            f"Holdout accuracy {holdout_accuracy:.4f} below minimum "
+            f"{MIN_HOLDOUT_ACCURACY}. Model not promoted."
+        )
 
     # --- Cross-validate ---
     cv_result = cross_validate_model(
@@ -210,6 +230,24 @@ def promote_model(
         folds=cv_folds,
         **params,
     )
+
+    # --- Check CV accuracy threshold ---
+    cv_accuracy = cv_result.get("average_accuracy")
+    if cv_accuracy is not None and cv_accuracy < MIN_CV_ACCURACY:
+        # Log as candidate (rejected) for audit trail
+        train_result = {
+            "train_rows": metadata.get("train_rows"),
+            "final_loss": metadata.get("epoch_losses", [None])[-1],
+            "model_path": metadata.get("model_path"),
+            "metadata_path": str(metadata_path),
+        }
+        _log_to_registry(
+            sport, target, model_version, "candidate", params, cv_result, train_result,
+        )
+        raise ValueError(
+            f"CV accuracy {cv_accuracy:.4f} below minimum {MIN_CV_ACCURACY}. "
+            f"Holdout accuracy was {holdout_accuracy or 'N/A'}. Model not promoted."
+        )
 
     # --- Log candidate as production & retire old ---
     _retire_current_production(sport, target)
@@ -229,8 +267,9 @@ def promote_model(
 
     logger.info(
         "promote_model: DONE — version=%s promoted to production  "
-        "cv_acc=%.4f cv_auc=%s registry_id=%d",
+        "holdout_acc=%.4f cv_acc=%.4f cv_auc=%s registry_id=%d",
         model_version,
+        holdout_accuracy or 0,
         cv_result.get("average_accuracy") or 0,
         f"{cv_result.get('average_auc'):.4f}" if cv_result.get("average_auc") is not None else "N/A",
         registry_id,
@@ -241,8 +280,10 @@ def promote_model(
         "target": target,
         "model_version": model_version,
         "status": "production",
+        "promoted": True,
         "registry_id": registry_id,
         "cv_folds": cv_folds,
+        "holdout_accuracy": holdout_accuracy,
         "cv_average_loss": cv_result.get("average_validation_loss"),
         "cv_average_accuracy": cv_result.get("average_accuracy"),
         "cv_average_auc": cv_result.get("average_auc"),
@@ -263,6 +304,9 @@ def refit_model(
     learning_rate: float = 0.001,
     hidden_dim: int = 128,
     dropout: float = 0.1,
+    n_layers: int = 3,
+    batch_norm: bool = True,
+    weight_decay: float = 0.0,
 ) -> dict:
     """End-to-end pipeline: train → cross-validate → log → promote.
 
@@ -281,8 +325,9 @@ def refit_model(
     """
     logger.info(
         "refit_model: sport=%s target=%s cv_folds=%d epochs=%d "
-        "hidden_dim=%d dropout=%.3f lr=%.6f bs=%d",
+        "hidden_dim=%d dropout=%.3f lr=%.6f bs=%d n_layers=%d batch_norm=%s wd=%.8f",
         sport, target, cv_folds, epochs, hidden_dim, dropout, learning_rate, batch_size,
+        n_layers, batch_norm, weight_decay,
     )
 
     # 1) Train candidate
@@ -294,6 +339,9 @@ def refit_model(
         learning_rate=learning_rate,
         hidden_dim=hidden_dim,
         dropout=dropout,
+        n_layers=n_layers,
+        batch_norm=batch_norm,
+        weight_decay=weight_decay,
     )
 
     # 2) Cross-validate
@@ -306,6 +354,9 @@ def refit_model(
         learning_rate=learning_rate,
         hidden_dim=hidden_dim,
         dropout=dropout,
+        n_layers=n_layers,
+        batch_norm=batch_norm,
+        weight_decay=weight_decay,
     )
 
     model_version = train_result["model_version"]
@@ -315,6 +366,9 @@ def refit_model(
         "learning_rate": learning_rate,
         "batch_size": batch_size,
         "epochs": epochs,
+        "n_layers": n_layers,
+        "batch_norm": batch_norm,
+        "weight_decay": weight_decay,
     }
 
     # 3) Log candidate to registry (even before promotion, for audit trail)
